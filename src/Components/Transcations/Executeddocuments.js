@@ -1,268 +1,324 @@
-// import React, { useState, useEffect } from "react";
-// import { useForm } from "react-hook-form";
-// import axios from "axios";
-// import { TextField, Button, MenuItem, Select, FormControl, InputLabel, Table, TableHead, TableBody, TableRow, TableCell, Paper, Typography, Box } from "@mui/material";
-
-// const Documentsupload = ({ isDropped }) => {
-//   const { register, handleSubmit, reset } = useForm();
-//   const [documents, setDocuments] = useState([]);
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     fetchDocuments();
-//   }, []);
-
-//   const fetchDocuments = async () => {
-//     try {
-//       const response = await axios.get("/api/sanction-documents");
-//       setDocuments(response.data);
-//     } catch (error) {
-//       console.error("Error fetching documents", error);
-//     }
-//   };
-
-//   const onSubmit = async (data) => {
-//     const formData = new FormData();
-//     formData.append("sanctionId", data.sanctionId);
-//     formData.append("documentType", data.documentType);
-//     formData.append("fileName", data.fileName);
-//     formData.append("file", data.file[0]);
-//     formData.append("uploadedDate", new Date().toISOString());
-
-//     setLoading(true);
-//     try {
-//       await axios.post("/api/sanction-documents", formData);
-//       fetchDocuments();
-//       reset();
-//     } catch (error) {
-//       console.error("Error uploading file", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <Box     sx={{
-//       display: "flex",
-//       justifyContent: "center",
-//       flexDirection: "column",
-//       gap: 2,
-//       width: "auto",
-//       // maxWidth: "800px",
-//       margin: "auto",
-//       // marginLeft:"200px;"
-//       marginTop: "70px",
-//       marginLeft: isDropped ? "100px" : "280px",
-//       transition: "margin-left 0.3s ease",
-//       width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
-//       // marginLeft: `calc(${isDropped}px + 20px)`,
-//       padding: 3,
-//       border: "1px solid #ccc",
-//       borderRadius: 2,
-//       boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
-//       transition: "margin-left 0.3s ease-in-out",
-//     }}>
-//       <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold", textAlign: "center", color: "#1976d2" }}>
-//         Documents repository
-//       </Typography>
-
-//       <form onSubmit={handleSubmit(onSubmit)}>
-//         <TextField label="Sanction ID" fullWidth margin="normal" {...register("sanctionId", { required: true })} />
-        
-//         <FormControl fullWidth margin="normal">
-//           <InputLabel>Document Type</InputLabel>
-//           <Select {...register("documentType", { required: true })}>
-//             <MenuItem value="Sanction Letter">Sanction Letter</MenuItem>
-//             <MenuItem value="Agreement">Agreement</MenuItem>
-//           </Select>
-//         </FormControl>
-
-//         <TextField label="File Name" fullWidth margin="normal" {...register("fileName", { required: true })} />
-        
-//         <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
-//           Upload File
-//           <input type="file" hidden {...register("file", { required: true })} />
-//         </Button>
-
-//         <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading}>
-//           {loading ? "Uploading..." : "Upload"}
-//         </Button>
-//       </form>
-
-//       <Typography variant="h6" sx={{ mt: 4, fontWeight: "bold" }}>Uploaded Documents</Typography>
-      
-//       <Paper sx={{ mt: 2, overflow: "auto" }}>
-//         <Table>
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Sanction ID</TableCell>
-//               <TableCell>Document Type</TableCell>
-//               <TableCell>File Name</TableCell>
-//               <TableCell>Uploaded Date</TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {documents.length > 0 ? (
-//               documents.map((doc) => (
-//                 <TableRow key={doc.id}>
-//                   <TableCell>{doc.sanctionId}</TableCell>
-//                   <TableCell>{doc.documentType}</TableCell>
-//                   <TableCell sx={{width:"100px"}}>
-//                     <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-//                       {doc.fileName}
-//                     </a>
-//                   </TableCell>
-//                   <TableCell>{new Date(doc.uploadedDate).toLocaleDateString()}</TableCell>
-//                 </TableRow>
-//               ))
-//             ) : (
-//               <TableRow>
-//                 <TableCell colSpan={4} align="center">
-//                   No documents uploaded yet.
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </Paper>
-//     </Box>
-//   );
-// };
-
-// export default Documentsupload;
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import {
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
+  Box,
+  CircularProgress,
+  Grid,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { TextField, Button, MenuItem, Select, FormControl, InputLabel, Table, TableHead, TableBody, TableRow, TableCell, Paper, Typography, Box } from "@mui/material";
 
-const Documentsupload = ({ isDropped }) => {
-  const { register, handleSubmit, reset } = useForm();
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(false);
+const DocumentsUpload = ({ isDropped }) => {
+  const navigate = useNavigate();
+  const [lenderCodes, setLenderCodes] = useState([]);
+  const [allSanctionIds, setAllSanctionIds] = useState([]);
+  const [filteredSanctionIds, setFilteredSanctionIds] = useState([]);
+  const [documentType, setDocumentType] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileUrl, setFileUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [lender_code, setLenderCode] = useState("");
+  const [sanctionId, setSanctionId] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [uploadedDate, setUploadedDate] = useState("");
+  const [combinationExists, setCombinationExists] = useState(false);
+  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    const fetchLenderCodes = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/sanction/lendercodes`);
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          setLenderCodes(
+            response.data.data.map((item) => ({
+              code: item.lender_code,
+              name: item.lender_name,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching lenders:", error);
+      }
+    };
 
-  const fetchDocuments = async () => {
+    const fetchSanctionIds = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/roc/sanctionid`);
+        if (response.data?.data) {
+          setAllSanctionIds(response.data.data); // [{ sanction_id, lender_code }]
+        }
+      } catch (error) {
+        console.error("Error fetching sanction IDs:", error);
+      }
+    };
+
+    fetchLenderCodes();
+    fetchSanctionIds();
+  }, [API_URL]);
+
+  const handleLenderChange = (code) => {
+    setLenderCode(code);
+    setSanctionId("");
+    setCombinationExists(false);
+
+    const filtered = allSanctionIds.filter((item) => item.lender_code === code);
+    setFilteredSanctionIds(filtered);
+  };
+
+  const handleSanctionChange = async (sid) => {
+    setSanctionId(sid);
+    await checkExistingCombination(lender_code, sid);
+  };
+
+  const checkExistingCombination = async (lender, sanction) => {
     try {
-      const response = await axios.get("/api/sanction-documents");
-      setDocuments(response.data);
-    } catch (error) {
-      console.error("Error fetching documents", error);
+      // console.log("check params: ", lender, sanction)
+      const res = await axios.get(`${API_URL}/executed/validate`, {
+        params: { lender_code: lender, sanction_id: sanction },
+      });
+      // console.log("check combo: ", res)
+      setCombinationExists(res.data.data);
+    } catch (err) {
+      console.error("Error checking combination:", err);
     }
   };
 
-  const onSubmit = async (data) => {
-    const formData = new FormData();
-    formData.append("sanctionId", data.sanctionId);
-    formData.append("documentType", data.documentType);
-    formData.append("fileName", data.fileName);
-    formData.append("file", data.file[0]);
-    formData.append("uploadedDate", data.uploadedDate);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    setLoading(true);
+    const allowedTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only PDF and Image files (PNG, JPG, JPEG) are allowed!");
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      alert("Please select a file before uploading!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    setIsUploading(true);
+
     try {
-      await axios.post("/api/sanction-documents", formData);
-      fetchDocuments();
-      reset();
+      const response = await axios.post(`${API_URL}/upload-local`, formData);
+      if (response.status === 200 && response.data.filePath) {
+        setFileUrl(response.data.filePath);
+        alert("File uploaded successfully!");
+      } else {
+        alert("Upload failed. Please try again.");
+      }
     } catch (error) {
-      console.error("Error uploading file", error);
+      console.error("Upload error:", error);
+      alert("Error uploading file. Please check the server.");
     } finally {
-      setLoading(false);
+      setIsUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!fileUrl) {
+      alert("Please upload a file first before saving!");
+      return;
+    }
+
+    if (combinationExists) {
+      alert("This lender_code and sanction_id combination already exists!");
+      return;
+    }
+
+    const createdby = localStorage.getItem("token");
+    const updatedby = localStorage.getItem("token");
+
+    const payload = {
+      lender_code,
+      sanctionId,
+      documentType,
+      fileName,
+      uploadedDate,
+      fileUrl,
+      createdby,
+      updatedby,
+    };
+
+    try {
+      const response = await axios.post(`${API_URL}/executed/create`, payload);
+      if (response.status === 201) {
+        localStorage.setItem("submissionMessage", "Executed Document Sent to Approval!");
+        localStorage.setItem("messageType", "success");
+      } else {
+        localStorage.setItem("submissionMessage", "Executed Document Sent to Approval Failed!");
+        localStorage.setItem("messageType", "error");
+      }
+      navigate("/DataCreation/ExecutedDocuments");
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("Error saving data to the database.");
     }
   };
 
   return (
-    <Box sx={{
-      display: "flex",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: 2,
-      margin: "auto",
-      marginTop: "70px",
-      marginLeft: isDropped ? "100px" : "280px",
-      transition: "margin-left 0.3s ease",
-      width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
-      padding: 3,
-      border: "1px solid #ccc",
-      borderRadius: 2,
-      boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
-    }}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: "bold", textAlign: "center", color: "#1976d2" }}>
-        Documents Repository
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        marginTop: "70px",
+        marginLeft: isDropped ? "100px" : "280px",
+        transition: "margin-left 0.3s ease-in-out",
+        width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
+        padding: 4,
+        border: "1px solid #ccc",
+        borderRadius: 2,
+        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+        backgroundColor: "#fff",
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{
+          color: "#0056b3",
+          fontWeight: "600",
+          fontSize: "20px",
+          marginBottom: "20px",
+          textAlign: "center",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+          borderBottom: "2px solid #0056b3",
+          paddingBottom: "10px",
+        }}
+      >
+        Upload and Save Documents
       </Typography>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <TextField label="Sanction ID" fullWidth margin="normal" {...register("sanctionId", { required: true })} />
-        
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Document Type</InputLabel>
-          <Select {...register("documentType", { required: true })}>
-            <MenuItem value="Sanction Letter">Sanction Letter</MenuItem>
-            <MenuItem value="Agreement">Agreement</MenuItem>
-          </Select>
-        </FormControl>
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Lender Code / Name</InputLabel>
+            <Select value={lender_code} onChange={(e) => handleLenderChange(e.target.value)}>
+              {lenderCodes.map((id) => (
+                <MenuItem key={id.code} value={id.code}>
+                  {id.code} - {id.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
 
-        <TextField label="File Name" fullWidth margin="normal" {...register("fileName", { required: true })} />
-        
-        <TextField 
-          label="Uploaded Date" 
-          type="date" 
-          fullWidth 
-          margin="normal" 
-          InputLabelProps={{ shrink: true }}
-          {...register("uploadedDate", { required: true })} 
-        />
+        <Grid item xs={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Sanction ID</InputLabel>
+            <Select value={sanctionId} onChange={(e) => handleSanctionChange(e.target.value)}>
+              {filteredSanctionIds.map((item) => (
+                <MenuItem key={item.sanction_id} value={item.sanction_id}>
+                  {item.sanction_id}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {combinationExists && (
+            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              This lender_code and sanction_id combination already exists.
+            </Typography>
+          )}
+        </Grid>
 
-        <Button variant="contained" component="label"  sx={{ mt: 2, fontSize: "0.75rem", padding: "10px 10px" }}>
-          Upload File
-          <input type="file" hidden {...register("file", { required: true })} />
-        </Button>
+        <Grid item xs={6}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Document Type</InputLabel>
+            <Select value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
+              <MenuItem value="Sanction Letter">Sanction Letter</MenuItem>
+              <MenuItem value="Agreement">Agreement</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
 
-        <Button type="submit" variant="contained" color="primary"  sx={{ mt: 2, fontSize: "0.75rem", padding: "10px 20px",ml:"20px" }} disabled={loading}>
-          {loading ? "Uploading..." : "Upload"}
-        </Button>
-      </form>
+        <Grid item xs={6}>
+          <TextField
+            label="File Name"
+            fullWidth
+            size="small"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+          />
+        </Grid>
 
-      <Typography variant="h6" sx={{ mt: 4, fontWeight: "bold" }}>Uploaded Documents</Typography>
-      
-      <Paper sx={{ mt: 2, overflow: "auto" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Sanction ID</TableCell>
-              <TableCell>Document Type</TableCell>
-              <TableCell>File Name</TableCell>
-              <TableCell>Uploaded Date</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {documents.length > 0 ? (
-              documents.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell>{doc.sanctionId}</TableCell>
-                  <TableCell>{doc.documentType}</TableCell>
-                  <TableCell>
-                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                      {doc.fileName}
-                    </a>
-                  </TableCell>
-                  <TableCell>{new Date(doc.uploadedDate).toLocaleDateString()}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No documents uploaded yet.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
+        <Grid item xs={6}>
+          <TextField
+            label="Uploaded Date"
+            type="date"
+            fullWidth
+            size="small"
+            value={uploadedDate}
+            onChange={(e) => setUploadedDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2} alignItems="center">
+        <Grid item xs={2}>
+          <Button variant="contained" component="label" fullWidth>
+            Choose File
+            <input type="file" hidden onChange={handleFileChange} />
+          </Button>
+        </Grid>
+
+        <Grid item xs={2}>
+          {selectedFile && (
+            <Typography variant="body2" sx={{ textAlign: "center" }}>
+              {selectedFile.name}
+            </Typography>
+          )}
+        </Grid>
+
+        <Grid item xs={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleUpload}
+            disabled={isUploading}
+          >
+            {isUploading ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : "Upload"}
+          </Button>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={2} justifyContent={"center"} alignItems="center">
+        <Grid item xs={2}>
+          <Button variant="contained" color="warning" fullWidth onClick={() => navigate(-1)}>
+            Back
+          </Button>
+        </Grid>
+        <Grid item xs={2}>
+          <Button
+            variant="contained"
+            color="success"
+            fullWidth
+            onClick={handleSave}
+            disabled={!fileUrl}
+          >
+            Save
+          </Button>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
 
-export default Documentsupload;
+export default DocumentsUpload;

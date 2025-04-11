@@ -1,158 +1,168 @@
-// import React, { useState, useRef } from "react";
-// import { Home, Settings, User, Menu, X, ChevronDown } from "lucide-react"; // Importing icons
-// import "./Dashboard.css"; // Importing CSS
+//////////////2:00 pm update 
 
-// const Sidebar = () => {
-//   const [isCollapsed, setIsCollapsed] = useState(false);
-//   const [isPopupOpen, setIsPopupOpen] = useState(false);
-//   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-//   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
-//   const homeRef = useRef(null);
-//   const userName = "John Doe"; // Example username
-
-//   // Toggle API popup beside "Home"
-//   const togglePopup = () => {
-//     if (homeRef.current) {
-//       const rect = homeRef.current.getBoundingClientRect();
-//       setPopupPosition({ top: rect.top, left: rect.right + 10 });
-//     }
-//     setIsPopupOpen(!isPopupOpen);
-//   };
-
-//   // Toggle User Dropdown
-//   const toggleUserDropdown = () => {
-//     setIsUserDropdownOpen(!isUserDropdownOpen);
-//   };
-
-//   const closePopup = () => setIsPopupOpen(false);
-//   const handleLogout = () => alert("Logged out!"); // Logout action
-
-//   return (
-//     <div className="app-container">
-//       {/* Top Navbar */}
-//       <nav className="navbar">
-//         <h2>Borrowing Management</h2>
-//         <div className="user-section">
-//           <button className="user-btn" onClick={toggleUserDropdown}>
-//             <User size={24} /> <ChevronDown size={18} />
-//           </button>
-//           {isUserDropdownOpen && (
-//             <div className="user-dropdown">
-//               <p>{userName}</p>
-//               <button onClick={handleLogout} className="logout-btn">Logout</button>
-//             </div>
-//           )}
-//         </div>
-//       </nav>
-
-//       <div className="content-container">
-//         {/* Sidebar */}
-//         <div className={`sidebar ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"}`}>
-//           <button className="toggle-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
-//             <Menu size={24} />
-//           </button>
-//           <nav className="nav-links">
-//             <NavItem icon={<Home size={24} />} text="Home" isCollapsed={isCollapsed} onClick={togglePopup} ref={homeRef} />
-//             <NavItem icon={<User size={24} />} text="Profile" isCollapsed={isCollapsed} />
-//             <NavItem icon={<Settings size={24} />} text="Settings" isCollapsed={isCollapsed} />
-//           </nav>
-//         </div>
-
-//         {/* Popup beside Home */}
-//         {isPopupOpen && (
-//           <div className="popup-box" style={{ top: `${popupPosition.top}px`, left: `${popupPosition.left}px` }}>
-//             <button className="close-btn" onClick={closePopup}><X size={20} /></button>
-//             <h3>More Options</h3>
-//             <ul className="popup-links">
-//               <li><a href="">Sub Option 1</a></li>
-//               <li><a href="">Sub Option 2</a></li>
-//               <li><a href="">Sub Option 3</a></li>
-//             </ul>
-//           </div>
-//         )}
-
-//         {/* Main Content */}
-//         <div className="main-content">
-//           <h1>Borrowing Management</h1>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const NavItem = React.forwardRef(({ icon, text, isCollapsed, onClick }, ref) => {
-//   return (
-//     <div ref={ref} className={`nav-item ${isCollapsed ? "centered" : ""}`} onClick={onClick}>
-//       {icon}
-//       {!isCollapsed && <span>{text}</span>}
-//     </div>
-//   );
-// });
-
-// export default Sidebar;
-
-
-
-
-import React, { useState, useRef } from "react";
-import { Home, Settings, User, Menu, ChevronDown, X } from "lucide-react";
-import Logo from "../Images/SriFin_Logo.png";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import CloseIcon from "@mui/icons-material/Close";
+import axios from "axios";
+import { message } from "antd";
+import { Box, Grid, Card, CardContent, Typography, Modal, CircularProgress, IconButton } from "@mui/material";
 import "./Dashboard.css";
 
-import { Drawer, Button, Box, Divider, IconButton } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import MoreVertIcon from "@mui/icons-material/MoreVert"; // Three-dot icon
+const Dashboard = ({ isDropped }) => {
+  const API_URL = process.env.REACT_APP_API_URL;
 
-// Icon imports
-import SettingsIcon from "@mui/icons-material/Settings";
-import BusinessIcon from "@mui/icons-material/Business";
-import WorkIcon from "@mui/icons-material/Work";
-import HelpIcon from "@mui/icons-material/Help";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [approvalData, setApprovalData] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedAsset] = useState(null);
+  const isTotalAssetsPage = location.pathname.includes("/total-assets");
 
-const Dashboard = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const homeRef = useRef(null);
-  const userName = "John Doe"; // Replace with dynamic data
-
-  const [currentMenu, setCurrentMenu] = useState(null);
-  const [activeLink, setActiveLink] = useState(null);
-  const [collapsed, setCollapsed] = useState(false); // New: Control collapse state
-  const theme = useTheme();
-
-  const handleMenuClick = (menu) => {
-    setCurrentMenu(currentMenu === menu ? null : menu);
-  };
-
-  const handleLinkClick = (link) => {
-    setActiveLink(link);
-  };
-
-  const togglePopup = () => {
-    if (homeRef.current) {
-      const rect = homeRef.current.getBoundingClientRect();
-      setPopupPosition({ top: rect.top, left: rect.right });
-    }
-    setIsPopupOpen(!isPopupOpen);
-  };
-
-  const closePopup = () => setIsPopupOpen(false);
-  const toggleUserDropdown = () => setIsUserDropdownOpen(!isUserDropdownOpen);
-  const handleLogout = () => alert("Logged out!");
+  useEffect(() => {
+    const fetchLenderDetails = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/Load/AllData`);
+        if (response.status === 200) {
+          // console.log("Success fetching lender details:", response.data);
+          // setAssets(response.data.assets || []);
+          setApprovalData(response.data);
+        } else {
+          message.error("Failed to fetch lender details");
+        }
+      } catch (error) {
+        console.error("Error fetching asset data:", error);
+        setError("Failed to load assets");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLenderDetails();
+  }, [API_URL]);
 
   return (
-    <></>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 2,
+        marginTop: "70px",
+        marginLeft: isDropped ? "100px" : "280px",
+        transition: "margin-left 0.3s ease",
+        width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
+        padding: 3,
+        border: "1px solid #ccc",
+        borderRadius: 2,
+        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+      }}
+    >
+      <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 4 }, mt: 0 }}>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Typography variant="h6" color="error" textAlign="center">
+            {error}
+          </Typography>
+        ) : (
+          <Grid container spacing={3} justifyContent="center">
+            <Grid item xs={12} sm={6} md={3} lg={3}>
+              <Card sx={cardStyle}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ fontWeight: "bold", textAlign: "center", mb: 2 }}>
+                    LenderMaster
+                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    {!isTotalAssetsPage && (
+                      <Box sx={{ textAlign: "center", flex: 1 }}>
+                        <Typography variant="h4" sx={{ ...valueStyle, color: "#2ECC71" }} onClick={() => navigate(`/approved`)}>
+                          {approvalData?.Approved ?? 0}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#27AE60" }}>Approved</Typography>
+                        <Typography variant="h4" sx={{ ...valueStyle, color: "#E74C3C", mt: 1 }} onClick={() => navigate(`/rejected`)}>
+                          {approvalData?.Rejected ?? 0}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "#C0392B", fontSize: "12px" }}>Rejected</Typography>
+                      </Box>
+                    )}
+                    <Box sx={{ textAlign: "center", flex: 1 }}>
+                      <Typography variant="h4" sx={{ ...valueStyle, color: "#2980B9" }} onClick={() => navigate(`/Pending`)}>
+                        {approvalData?.ApprovalPending ?? 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#3498DB" }}>Pending</Typography>
+                      <Typography variant="h4" sx={{ ...valueStyle, color: "#34495E", mt: 1 }} onClick={() => navigate(`/FetchAll`)}>
+                        {approvalData?.Total ?? 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#2C3E50" }}>Total</Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+      </Box>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <Box sx={modalStyle}>
+          <IconButton sx={{ position: "absolute", top: 8, right: 8 }} onClick={() => setModalOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+          {selectedAsset && (
+            <>
+              <Typography variant="h5" sx={{ fontWeight: "bold", mb: 2 }}>
+                {selectedAsset.name} Details
+              </Typography>
+              <Typography variant="h6">Total: {selectedAsset.total}</Typography>
+              <Typography variant="h6">Assigned: {selectedAsset.assigned}</Typography>
+              <Typography variant="h6">Free Pool: {selectedAsset.free}</Typography>
+              <Typography variant="h6" sx={{ color: "#E74C3C", fontWeight: "bold" }}>
+                Under Maintenance: {selectedAsset.underMaintenance}
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Modal>
+    </Box>
   );
 };
 
-// const NavItem = React.forwardRef(({ icon, text, isCollapsed, onClick }, ref) => (
-//   <div ref={ref} className={`nav-item ${isCollapsed ? "justify-center" : "gap-2"}`} onClick={onClick}>
-//     {icon}
-//     {!isCollapsed && <span>{text}</span>}
-//   </div>
-// ));
+const cardStyle = {
+  backgroundColor: "#ECF0F1",
+  color: "#1C2833",
+  borderRadius: 3,
+  p: 2,
+  boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+  transition: "transform 0.3s, box-shadow 0.3s",
+  "&:hover": {
+    transform: "scale(1.05)",
+    backgroundColor: "#D5DBDB",
+    boxShadow: "0px 6px 12px rgba(0,0,0,0.2)",
+  },
+};
+
+const valueStyle = {
+  fontWeight: "bold",
+  cursor: "pointer",
+  transition: "transform 0.2s ease-in-out",
+  "&:hover": { transform: "scale(1.2)" },
+};
+
+const modalStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  bgcolor: "#ECF0F1",
+  color: "#34495E",
+  p: 4,
+  borderRadius: 3,
+  textAlign: "center",
+  boxShadow: 4,
+  maxWidth: 400,
+  width: "90%",
+};
 
 export default Dashboard;
-
