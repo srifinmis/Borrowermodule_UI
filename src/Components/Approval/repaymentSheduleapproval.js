@@ -273,10 +273,15 @@
 
 // export default RepaymentScheduleApprovalAll;
 
+
 import React, { useState, useEffect } from "react";
-import { Table, Button, Modal, Spin, message, Checkbox, Input, Form } from "antd";
+import { Table, Button, Modal, Spin, message, Checkbox, } from "antd";
 import axios from "axios";
+import { TextField } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const RepaymentScheduleApprovalAll = ({ isDropped }) => {
     const API_URL = process.env.REACT_APP_API_URL;
@@ -289,20 +294,44 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
     const [selectAll, setSelectAll] = useState(false);
     const [remarks, setRemarks] = useState("");
     const [remarksError, setRemarksError] = useState(false);
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         const fetchLenders = async () => {
             setLoading(true);
+
+            const submissionMessage = localStorage.getItem("submissionMessage");
+            const messageType = localStorage.getItem("messageType");
+
+            if (submissionMessage) {
+                // Show toast message
+                if (messageType === "success") {
+                    toast.success(submissionMessage);
+                } else if (messageType === "error") {
+                    toast.error(submissionMessage);
+                }
+                setTimeout(() => {
+                    localStorage.removeItem("submissionMessage");
+                    localStorage.removeItem("messageType");
+                }, 5000);
+            }
+
             try {
                 const response = await axios.get(`${API_URL}/repayment/schedule/fetchAll`);
-                // console.log("get: ", response)
+                console.log("get repayment fetchall: ", response)
                 if (response.status === 201) {
-                    setLenders(response.data.data);
+                    const sortedData = response.data.data.sort(
+                        (a, b) => new Date(b.createdat) - new Date(a.createdat)
+                    );
+                    setLenders(sortedData);
+
+                    // setLenders(response.data.data);
                 } else {
-                    message.error("Failed to fetch lenders");
+                    message.error("Failed to fetch Repayment");
                 }
             } catch (error) {
-                message.error("Error fetching lenders");
+                message.error("Error fetching Repayment");
             } finally {
                 setLoading(false);
             }
@@ -340,20 +369,19 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
             setSelectedRows(selectedRows.filter((id) => id !== key));
         }
     };
-
     const handleApprove = async () => {
         if (selectedRows.length === 0) {
-            message.warning("No lenders selected.");
+            toast.warning("No Repayment selected.");
             return;
         }
 
         try {
-            // Prepare payload with the detailed data of selected rows
             const payload = selectedRows.map((key) => {
                 const lendersDetails = groupedLenders[key];
                 return lendersDetails.map((lender) => ({
                     sanction_id: lender.sanction_id,
                     tranche_id: lender.tranche_id,
+                    lender_code: lender.lender_code,
                     due_date: lender.due_date,
                     createdat: lender.createdat,
                     updatedat: lender.createdat,
@@ -361,6 +389,13 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
                     createdby: lender.createdby,
                     interest_due: lender.interest_due,
                     principal_due: lender.principal_due,
+                    opening_balance: lender.opening_balance,
+                    closing_balance: lender.closing_balance,
+                    from_date: lender.from_date,
+                    interest_days: lender.interest_days,
+                    interest_rate: lender.interest_rate,
+                    emi_sequence: lender.emi_sequence,
+                    repayment_type: lender.repayment_type,
                     total_due: lender.total_due,
                     remarks: lender.remarks,
                     approval_status: "Approved",
@@ -368,36 +403,41 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
             }).flat();
 
             const response = await axios.post(`${API_URL}/schedule/Approve`, payload);
-            if (response.status === 201) {
-                toast.success("Lenders approved successfully!");
 
+            if (response.status === 201) {
                 setLenders((prev) =>
-                    prev.filter(
-                        (lender) =>
-                            !selectedRows.some(
-                                (row) =>
-                                    row.sanction_id === lender.sanction_id &&
-                                    row.tranche_id === lender.tranche_id &&
-                                    row.due_date === lender.due_date
-                            )
+                    prev.filter((lender) =>
+                        !payload.some(
+                            (approved) =>
+                                lender.sanction_id === approved.sanction_id &&
+                                lender.tranche_id === approved.tranche_id &&
+                                lender.due_date === approved.due_date
+                        )
                     )
                 );
+                localStorage.setItem("submissionMessage", "Repayment Schedule Approved!");
+                localStorage.setItem("messageType", "success");
+                // toast.success("Repayment Schedule Approved successfully!"); // Success toast
+                // setTimeout(() => {
+                navigate("/dashboard");
+                // }, 1500);
                 setSelectedRows([]);
             } else {
-                toast.error("Approval failed.");
+                toast.error("Repayment Schedule Approval failed!"); // Error toast
             }
         } catch (error) {
-            message.error(`Error: ${error.response?.data?.message || "Approval failed."}`);
+            toast.error(`Error: ${error.response?.data?.message || "Approval failed."}`); // Error toast
         }
     };
 
     const handleReject = async () => {
         if (selectedRows.length === 0) {
-            message.warning("No lenders selected.");
+            alert("No Repayment selected.");
             return;
         }
         if (!remarks.trim()) {
             setRemarksError(true);
+            alert("Please enter remarks before rejecting.");
             return;
         }
 
@@ -413,9 +453,7 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
             }).flat();
 
             const response = await axios.post(`${API_URL}/schedule/Reject`, payload);
-
             if (response.status === 201) {
-                toast.success("Lenders rejected successfully!");
                 setLenders((prev) =>
                     prev.filter(
                         (lender) =>
@@ -427,21 +465,31 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
                             )
                     )
                 );
+                // toast.success("Repayment Schedule Rejected successfully!"); // Success toast
+                localStorage.setItem("submissionMessage", "Repayment Schedule Rejected !");
+                localStorage.setItem("messageType", "error");
+
+                navigate("/dashboard");
+
                 setSelectedRows([]);
                 setRemarks("");
                 setRemarksError(false);
             } else {
-                toast.error("Rejection failed.");
+                toast.error("Repayment Schedule Rejection failed."); // Error toast
             }
         } catch (error) {
-            message.error(`Error: ${error.response?.data?.message || "Rejection failed."}`);
+            toast.error(`Error: ${error.response?.data?.message || "Rejection failed."}`); // Error toast
         }
     };
 
     const columns = [
         {
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
             title: (
                 <Checkbox
+                    style={{ transform: "scale(1.6)" }}
                     indeterminate={selectedRows.length > 0 && selectedRows.length < Object.keys(groupedLenders).length}
                     checked={selectAll}
                     onChange={handleSelectAllChange}
@@ -450,16 +498,39 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
             key: "selectAll",
             render: (_, record) => (
                 <Checkbox
+                    style={{ transform: "scale(1.6)" }}
                     checked={selectedRows.includes(record.key)}
                     onChange={(e) => handleSelectRow(e, record.key)}
                 />
             ),
         },
-        { title: "Sanction ID", dataIndex: "sanction_id", key: "sanction_id" },
-        { title: "Tranche ID", dataIndex: "tranche_id", key: "tranche_id" },
+        {
+            title: "Lender Code",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+            dataIndex: "lender_code",
+            key: "lender_code",
+            render: (_, record) => groupedLenders[record.key]?.[0]?.lender_code || "N/A"
+        },
+        {
+            title: "Sanction ID", dataIndex: "sanction_id", key: "sanction_id",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
+        {
+            title: "Tranche ID", dataIndex: "tranche_id", key: "tranche_id",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
         {
             title: "Action",
             key: "action",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
             render: (_, record) => (
                 <Button type="primary" onClick={() => handleView(`${record.sanction_id}-${record.tranche_id}`)}>
                     View
@@ -469,6 +540,7 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
     ];
 
     const detailColumns = [
+        { title: "Lender Code", dataIndex: "lender_code", key: "lender_code" },
         { title: "Sanction ID", dataIndex: "sanction_id", key: "sanction_id" },
         { title: "Tranche ID", dataIndex: "tranche_id", key: "tranche_id" },
         { title: "Due Date", dataIndex: "due_date", key: "due_date" },
@@ -482,28 +554,30 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
         <div
             style={{
                 display: "flex",
+                justifyContent: "center",
                 flexDirection: "column",
-                gap: "16px",
+                gap: 2,
                 margin: "auto",
                 marginTop: "70px",
                 marginLeft: isDropped ? "100px" : "280px",
-                transition: "margin-left 0.3s ease",
+                transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
-                padding: "24px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+                padding: 3,
+                border: "3px solid #ccc",
+                borderRadius: 10,
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
+            <ToastContainer position="top-right" autoClose={5000} />
             <h2 style={{ textAlign: "center", borderBottom: "2px solid #0056b3", paddingBottom: 10 }}>
                 Repayment Schedule Approval
             </h2>
             {loading ? (
                 <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
             ) : Object.keys(groupedLenders).length === 0 ? (
-                <p style={{ textAlign: "center" }}>No Repayment Schedule's available</p>
+                <p style={{ textAlign: "center" }}>No Pending Repayment Schedule's Available</p>
             ) : (
-                <Table
+                <Table bordered
                     dataSource={Object.keys(groupedLenders).map((key) => {
                         const [sanction_id, tranche_id] = key.split("-");
                         return { key, sanction_id, tranche_id };
@@ -519,7 +593,16 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
                 visible={modalVisible}
                 onCancel={() => setModalVisible(false)}
                 footer={null}
-                width={750}
+                width={800}
+
+                style={{
+                    width: "1000",
+                    position: "relative",
+                    right: "-100px",
+                    transform: "translateY(0%)",
+                }}
+                bodyStyle={{ maxHeight: '60vh', overflow: 'auto' }}
+                centered
             >
                 {selectedGroup && (
                     <Table
@@ -531,42 +614,41 @@ const RepaymentScheduleApprovalAll = ({ isDropped }) => {
                 )}
             </Modal>
 
-            {/* Remarks and Buttons */}
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", marginRight: "20px" }}>
-                <Form.Item
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", marginRight: "0px" }}>
+                <TextField
                     label="Remarks (Required for Rejection)"
-                    validateStatus={remarksError ? "error" : ""}
-                    help={remarksError ? "Remarks are required when rejecting." : ""}
-                    style={{ width: "400px" }}
-                >
-                    <Input.TextArea
-                        value={remarks}
-                        onChange={(e) => {
-                            setRemarks(e.target.value);
-                            if (e.target.value.trim()) setRemarksError(false); // Remove error when user types
-                        }}
-                        rows={4}
-                    />
-                </Form.Item>
+                    value={remarks}
+                    onChange={(e) => {
+                        setRemarks(e.target.value);
+                        if (e.target.value.trim()) setRemarksError(false); // Remove error when user types
+                    }}
+                    multilines
+                    rows={0} xs={12} sm={6}
+                    sx={{ marginTop: 2, width: "400px" }}
+                    required
+                    error={remarksError}
+                    helperText={remarksError ? "Remarks are required when rejecting." : ""}
+                />
             </div>
 
-            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10, width: "100%" }}>
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 5, width: "100%" }}>
                 <Button
                     type="primary"
-                    style={{ marginBottom: "20px", marginRight: "20px" }}
+                    style={{ marginBottom: "20px", marginRight: "20px", fontSize: "18px", height: "40px" }}
                     onClick={handleApprove}
                     disabled={selectedRows.length === 0 || loading}
                 >
                     Approve
                 </Button>
                 <Button
-                    type="danger"
-                    style={{ marginBottom: "20px", marginRight: "20px" }}
+                    type="primary" danger
+                    style={{ marginBottom: "20px", marginRight: "20px", fontSize: "18px", height: "40px", borderColor: "white" }}
                     onClick={handleReject}
-                    disabled={selectedRows.length === 0 || !remarks.trim() || loading}
+                    disabled={selectedRows.length === 0 || loading || !remarks.trim()}
                 >
                     Reject
                 </Button>
+
             </div>
         </div>
     );

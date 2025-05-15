@@ -174,10 +174,14 @@ const InterestRateChangeApproval = ({ isDropped }) => {
 
   const columns = [
     {
-      title: <Checkbox onChange={handleSelectAll} checked={selectedRows.length === interestRates.length} />,
+      title: <Checkbox style={{ transform: "scale(1.6)" }} onChange={handleSelectAll} checked={selectedRows.length === interestRates.length} />,
       dataIndex: "change_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (_, record) => (
         <Checkbox
+          style={{ transform: "scale(1.6)" }}
           checked={selectedRows.some(
             (row) => row.change_id === record.change_id && row.sanction_id === record.sanction_id && row.tranche_id === record.tranche_id
           )}
@@ -185,16 +189,44 @@ const InterestRateChangeApproval = ({ isDropped }) => {
         />
       ),
     },
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Tranche ID", dataIndex: "tranche_id" },
-    { title: "New Interest Rate", dataIndex: "new_interest_rate" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche ID", dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "New Interest Rate", dataIndex: "new_interest_rate",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     // { title: "Effective Date", dataIndex: "effective_date" },
     // { title: "Updated Date", dataIndex: "updatedat" },
-    { title: "Updated By", dataIndex: "updatedby" },
+    {
+      title: "Updated By", dataIndex: "updatedby",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Details",
       dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (code, record) => <Button type="link" onClick={() => handleViewDetails(code, record.lender_code, record.tranche_id, record.approval_status, record.createdat)}>View</Button>,
     },
   ];
@@ -208,9 +240,9 @@ const InterestRateChangeApproval = ({ isDropped }) => {
       transition: "margin-left 0.3s ease-in-out",
       width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
       padding: 20,
-      border: "1px solid #ccc",
+      border: "3px solid #ccc",
       borderRadius: 10,
-      boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+      // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
     }}>
       <ToastContainer position="top-right" autoClose={5000} />
       <Typography sx={{
@@ -230,9 +262,9 @@ const InterestRateChangeApproval = ({ isDropped }) => {
         loading ? (
           <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
         ) : interestRates.length === 0 ? (
-          <p style={{ textAlign: "center" }}>No pending interest rate changes</p>
+          <p style={{ textAlign: "center" }}>No pending Interest Rate Changes Available</p>
         ) : (
-          <Table dataSource={interestRates}
+          <Table bordered dataSource={interestRates}
             columns={columns}
             rowKey="change_id"
             pagination={false} />

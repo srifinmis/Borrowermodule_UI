@@ -33,7 +33,7 @@ const TrancheDetailsapprove = ({ isDropped }) => {
     const API_URL = process.env.REACT_APP_API_URL;
 
     const location = useLocation();
-    const { tranche_id, lender_code, sanction_id, approval_status, updatedat } = location.state || {};
+    const { tranche_id, id, lender_code, sanction_id, approval_status, updatedat } = location.state || {};
     const [lender, setLender] = useState("");
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
@@ -50,7 +50,7 @@ const TrancheDetailsapprove = ({ isDropped }) => {
                     `${API_URL}/tranche/details`,
                     {
                         params: {
-                            tranche_id, lender_code, sanction_id, approval_status, updatedat
+                            tranche_id, id, lender_code, sanction_id, approval_status, updatedat
                         }
                     }
                 );
@@ -66,7 +66,7 @@ const TrancheDetailsapprove = ({ isDropped }) => {
             }
         };
         fetchLenderDetails();
-    }, [API_URL,tranche_id, approval_status, lender_code, sanction_id, updatedat]);
+    }, [API_URL, tranche_id, id, approval_status, lender_code, sanction_id, updatedat]);
 
 
     const handleApprove = async () => {
@@ -125,9 +125,9 @@ const TrancheDetailsapprove = ({ isDropped }) => {
                 body: JSON.stringify([{ ...dataSend, remarks }]),
             });
 
-            const data = await response.json();
-
+            // const data = await response.json();
             // console.log("Response Data sent: ", data);
+
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Server responded with error:", errorData);
@@ -170,9 +170,9 @@ const TrancheDetailsapprove = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 3,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 2,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <Typography
@@ -244,7 +244,7 @@ const TrancheDetailsapprove = ({ isDropped }) => {
                     </Box>
                 </Paper>
             ) : (
-                <Typography sx={{ textAlign: "center", marginTop: 2 }} >Sanction details not found</Typography>
+                <Typography sx={{ textAlign: "center", marginTop: 2 }} >Tranche Details not found</Typography>
             )}
         </Box>
     );

@@ -9,16 +9,16 @@ const RocformDetailsmaker = ({ isDropped }) => {
     const approvedByOptions = ["Board", "Finance Committee"];
 
     const fieldConfig = [
-        { name: "lender_code", label: "Lender Code", type: "select" },
-        { name: "sanction_id", label: "Sanction Id", type: "select" },
-        { name: "approved_by", label: "Approved By", type: "select", options: approvedByOptions },
-        { name: "date_of_approval", label: "Date of Approval" },
-        { name: "document_executed_date", label: "Document Executed Date" },
-        { name: "due_date_charge_creation", label: "Due Date Charge Creation" },
-        { name: "date_of_form_filed_creation", label: "Date of Form Filed Creation" },
-        { name: "due_date_satisfaction", label: "Due Date Satisfaction" },
-        { name: "date_of_filing_satisfaction", label: "Date of Filing Satisfaction" },
-        { name: "remarks", label: "Remarks" },
+        { name: "lender_code", label: "Lender Code", type: "select", readOnly: true },
+        { name: "sanction_id", label: "Sanction Id", type: "select", readOnly: true },
+        { name: "approved_by", label: "Approved By", type: "select", required: true, options: approvedByOptions },
+        { name: "date_of_approval", label: "Date of Approval", type: "date", required: true },
+        { name: "document_executed_date", label: "Document Executed Date", type: "date", required: true },
+        { name: "due_date_charge_creation", label: "Due Date Charge Creation", type: "date", required: true },
+        { name: "date_of_form_filed_creation", label: "Date of Form Filed Creation", type: "date" },
+        { name: "due_date_satisfaction", label: "Due Date Satisfaction", type: "date" },
+        { name: "date_of_filing_satisfaction", label: "Date of Filing Satisfaction", type: "date" },
+        // { name: "remarks", label: "Remarks" },
     ];
     const location = useLocation();
     const { lender_code, sanction_id, approval_status, updatedat } = location.state;
@@ -26,6 +26,7 @@ const RocformDetailsmaker = ({ isDropped }) => {
     const [sanction, setSanction] = useState(null);
     const [sanctionIds, setSanctionIds] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [originalLender, setOriginalLender] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
@@ -55,6 +56,7 @@ const RocformDetailsmaker = ({ isDropped }) => {
                 // console.log("Response maker: ", response.data.roc);
                 if (response.status === 200) {
                     setSanction(response.data.roc);
+                    setOriginalLender(response.data.roc);
                 }
             } catch (error) {
                 console.error("Error fetching roc details:", error);
@@ -65,11 +67,30 @@ const RocformDetailsmaker = ({ isDropped }) => {
         fetchLenderDetails();
     }, [API_URL, sanction_id, approval_status, lender_code, updatedat]);
 
+    const hasChanges = (current, original) => {
+        if (!current || !original) return false;
+        return JSON.stringify(current) !== JSON.stringify(original);
+    };
+
     const handleEdit = () => {
         setIsEditing(true);
     };
 
+    const validateRequiredFields = () => {
+        const missingFields = fieldConfig
+            .filter((field) => field.required)
+            .filter((field) => !sanction[field.name] || sanction[field.name].toString().trim() === "");
+
+        if (missingFields.length > 0) {
+            alert(`Please fill in all required fields:\n${missingFields.map(f => f.label).join(", ")}`);
+            return false;
+        }
+        return true;
+    };
+
     const handleUpdate = async () => {
+        if (!validateRequiredFields()) return;
+
         try {
 
             const createdby = localStorage.getItem("token");  // Fallback to a default value
@@ -102,6 +123,7 @@ const RocformDetailsmaker = ({ isDropped }) => {
                 const errorResponse = await response.json();
                 alert(errorResponse.message);
             }
+            navigate("/DataCreation/ROCForm");
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating ROC details:", error);
@@ -130,9 +152,9 @@ const RocformDetailsmaker = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 3,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 2,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <Typography
@@ -177,6 +199,7 @@ const RocformDetailsmaker = ({ isDropped }) => {
                                     </TextField>
                                 ) : field.name === "approved_by" ? (
                                     <TextField
+                                        required={field.required}
                                         select
                                         label={field.label}
                                         name={field.name}
@@ -198,26 +221,26 @@ const RocformDetailsmaker = ({ isDropped }) => {
                                     </TextField>
                                 ) : (
                                     <TextField
+                                        required={field.required}
+                                        type={field.type === "date" ? "date" : "text"}
                                         label={field.label}
                                         name={field.name}
-                                        value={sanction[field.name] || ""}
+                                        value={field.type === "date" && sanction[field.name] ? sanction[field.name].split("T")[0] : (sanction[field.name] || "")}
                                         fullWidth
                                         onChange={handleChange}
+                                        InputLabelProps={field.type === "date" ? { shrink: true } : {}}
                                         InputProps={{
                                             readOnly: field.name === "lender_code" || field.name === "sanction_id" || !isEditing,
                                             style: field.name === "sanction_id" || field.name === "lender_code"
                                                 ? { pointerEvents: "none", cursor: "not-allowed", backgroundColor: "#ebeced" }
                                                 : {},
-
                                         }}
                                         sx={{
                                             cursor: "default",
                                             backgroundColor: sanction.updated_fields?.includes(field.name) ? "#fcec03" : "#ebeced",
-                                            "& .MuiInputBase-root": {
-                                                // pointerEvents: "none"
-                                            }
                                         }}
                                     />
+
                                 )}
 
                             </Grid>
@@ -228,8 +251,8 @@ const RocformDetailsmaker = ({ isDropped }) => {
                             Back
                         </Button>
                         {isEditing ? (
-                            <Button variant="contained" color="primary" onClick={handleUpdate}>
-                                Update
+                            <Button variant="contained" color="primary" onClick={handleUpdate} disabled={!hasChanges(sanction, originalLender)}
+                            > Update
                             </Button>
                         ) : (
                             <Button variant="contained" color="error" onClick={handleEdit}>
@@ -237,6 +260,11 @@ const RocformDetailsmaker = ({ isDropped }) => {
                             </Button>
                         )}
                     </Box>
+                    {isEditing && !hasChanges(sanction, originalLender) && (
+                        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", mt: 1 }}>
+                            Make changes to enable the Update button.
+                        </Typography>
+                    )}
                 </Paper>
             ) : (
                 <Typography sx={{ textAlign: "center", marginTop: 2 }}>Roc Form details not found</Typography>

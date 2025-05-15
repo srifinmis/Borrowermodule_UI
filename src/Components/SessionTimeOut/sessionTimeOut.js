@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const SESSION_TIMEOUT = 30 * 60 * 1000;
-// console.log("session: ", SESSION_TIMEOUT)
-
 const SessionTimeout = () => {
+    // const SESSION_TIMEOUT = 24 * 60 * 60 * 1000;
+    const SESSION_TIMEOUT = Number(process.env.REACT_APP_TIMEOUT);
+    console.log("session Time:", SESSION_TIMEOUT);
     const navigate = useNavigate();
     const location = useLocation();
     const [hasNavigated, setHasNavigated] = useState(false);
@@ -27,7 +27,7 @@ const SessionTimeout = () => {
         const interval = setInterval(checkSession, 5000); // every 5 sec
 
         return () => clearInterval(interval);
-    }, [location.pathname, navigate, hasNavigated]);
+    }, [SESSION_TIMEOUT, location.pathname, navigate, hasNavigated]);
 
     return null;
 };

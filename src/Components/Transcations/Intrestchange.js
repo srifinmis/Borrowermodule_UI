@@ -16,6 +16,7 @@ const InterestRateChangeForm = ({ isDropped }) => {
   const [lenderCodes, setLenderCodes] = useState([]);
   const [sanctionData, setSanctionData] = useState([]);
   const [trancheData, setTrancheData] = useState([]);
+  const [date, setDate] = useState([]);
   const [interestData, setInerestData] = useState([]);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({});
@@ -30,21 +31,22 @@ const InterestRateChangeForm = ({ isDropped }) => {
     },
     {
       name: "tranche_id", label: "Tranche ID", required: true, type: "dropdown",
-      options: trancheData.filter(t => t.sanction_id === formData.sanction_id)
+      options: trancheData.filter(t => t.lender_code === formData.lender_code && t.sanction_id === formData.sanction_id)
     },
     { name: "new_interest_rate", label: "New Interest Rate(%)", required: true, type: "number" },
     { name: "effective_date", label: "Effective Date", required: true, type: "date" },
-    { name: "updatedby", label: "Updated By", required: true, type: "text" },
+    { name: "updatedby", label: "Updated By", required: true, type: "text", minLength: 6, maxLength: 100 },
     { name: "updatedat", label: "Updated Date", required: true, type: "date" },
   ], [lenderCodes, sanctionData, trancheData, formData.lender_code, formData.sanction_id]);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const initialFormData = {};
     fieldConfig.forEach((field) => {
       initialFormData[field.name] = "";
     });
     setFormData(initialFormData);
-  }, [fieldConfig]);
+  }, []);
 
   useEffect(() => {
     const fetchLenders = async () => {
@@ -120,14 +122,68 @@ const InterestRateChangeForm = ({ isDropped }) => {
           item.tranche_id === value
       );
       newErrors.tranche_id = exists ? "Tranche ID already exists for this Lender Code & Sanction ID!" : "";
+
+      const tranche = trancheData.find(
+        (t) => t.tranche_id === newFormData.tranche_id
+      );
+      console.log("interest start date data: ", tranche.interest_start_date)
+      setDate(tranche.interest_start_date)
+
+    }
+
+    if (name === "effective_date") {
+      // const interestStartDate = new Date(date);
+      // console.log("interest start date: ", interestStartDate)
+      // const effectiveDate = new Date(value);
+      // if (effectiveDate <= interestStartDate) {
+      //   newErrors.effective_date = `Effective Date should be after Interest Start Date (${date})!`;
+      // } else {
+      //   newErrors.effective_date = "";
+      // }
     }
 
     setFormData(newFormData);
     setErrors(newErrors);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    const validateField = (field) => {
+      const value = formData[field.name];
+
+      if (field.required && (!value || value.toString().trim() === "")) {
+        newErrors[field.name] = `${field.label} is required`;
+        return;
+      }
+
+      if (value && field.type === "number" && !/^\d+(\.\d+)?$/.test(value)) {
+        newErrors[field.name] = `${field.label} must be 0 or positive number`;
+      }
+
+      if (value && field.minLength && value.length < field.minLength) {
+        newErrors[field.name] = `${field.label} must be at least ${field.minLength} characters`;
+      }
+
+      if (value && field.maxLength && value.length > field.maxLength) {
+        newErrors[field.name] = `${field.label} must be less than ${field.maxLength} characters`;
+      }
+
+      if (value && field.length && value.length !== field.length) {
+        newErrors[field.name] = `${field.label} must be exactly ${field.length} digits`;
+      }
+    };
+    
+    fieldConfig.forEach(validateField);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     const createdby = localStorage.getItem("token");
 
     const finalFormData = {
@@ -135,20 +191,34 @@ const InterestRateChangeForm = ({ isDropped }) => {
       createdby,
     };
 
-    try {
-      const response = await fetch(`${API_URL}/interest/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalFormData),
-      });
+    const interestStartDate = new Date(date);
+    // console.log("interest start date: ", interestStartDate)
+    const effectiveDate = new Date(finalFormData.effective_date);
+    if (effectiveDate <= interestStartDate) {
+      setErrors.effective_date = `Effective Date should be after Interest Start Date (${date})!`;
+      alert(`Effective Date should be after Interest Start Date (${date})!`);
+      return
+    } else {
+      setErrors.effective_date = "";
+    } 
 
-      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+    if (validateForm()) {
+      try {
+        // console.log("final frontend sending save: ", finalFormData)
+        const response = await fetch(`${API_URL}/interest/create`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalFormData),
+        });
 
-      localStorage.setItem("submissionMessage", "Interest Rate Change Sent for Approval!");
-      localStorage.setItem("messageType", "success");
-      navigate("/DataCreation/InterestRate");
-    } catch (error) {
-      console.error("Error submitting interest rate change:", error);
+        if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+
+        localStorage.setItem("submissionMessage", "Interest Rate Change Sent for Approval!");
+        localStorage.setItem("messageType", "success");
+        navigate("/DataCreation/InterestRate");
+      } catch (error) {
+        console.error("Error submitting interest rate change:", error);
+      }
     }
   };
 
@@ -164,9 +234,9 @@ const InterestRateChangeForm = ({ isDropped }) => {
         transition: "margin-left 0.3s ease",
         width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
         padding: 3,
-        border: "1px solid #ccc",
+        border: "3px solid #ccc",
         borderRadius: 2,
-        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+        // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
       }}
     >
       <Typography
@@ -275,8 +345,6 @@ const InterestRateChangeForm = ({ isDropped }) => {
 };
 
 export default InterestRateChangeForm;
-
-
 
 ///1:05 before
 // import React, { useState, useEffect } from "react";

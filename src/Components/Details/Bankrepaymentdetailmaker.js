@@ -130,9 +130,9 @@ const SanctionDetailsmaker = ({ isDropped }) => {
             transition: "margin-left 0.3s ease-in-out",
             width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
             padding: 3,
-            border: "1px solid #ccc",
+            border: "3px solid #ccc",
             borderRadius: 2,
-            boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+            // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
         }}>
             <Typography sx={{
                 color: "#0056b3",

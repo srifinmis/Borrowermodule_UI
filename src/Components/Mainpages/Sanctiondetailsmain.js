@@ -14,8 +14,10 @@ const SanctionDetailsMain = ({ isDropped }) => {
   const [sanctions, setSanctions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [approvalFilter, setApprovalFilter] = useState("Approved"); // Default to "Approved"
+  const [approvalFilter, setApprovalFilter] = useState("All"); // Default to "Approved"
   const navigate = useNavigate();
+
+  // const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchSanctions = async () => {
@@ -36,11 +38,19 @@ const SanctionDetailsMain = ({ isDropped }) => {
       }
 
       try {
-        const response = await axios.get(`${API_URL}/sanction/fetchAll`);
+
+        const response = await axios.get(`${API_URL}/sanction/fetchAll`, {
+          params: {
+            token: localStorage.getItem("token")
+          }
+        })
         // console.log("got data: ", response);
         if (response.data.success) {
-          const approvedRoc = response.data.mainData;
-          setSanctions(approvedRoc); // Show only approved sanctions initially
+          const combinedLenders = [
+            ...response.data.mainData,
+            ...response.data.data,
+          ];
+          setSanctions(combinedLenders); // Show only approved sanctions initially
         } else {
           message.error("Failed to fetch sanction details");
         }
@@ -56,11 +66,9 @@ const SanctionDetailsMain = ({ isDropped }) => {
   }, [API_URL]);
 
   const handleViewDetails = (sanction_id, lender_code, approval_status, updatedat) => {
-    // console.log("Both: ", sanction_id, lender_code, approval_status, updatedat);
     navigate(`/sanctionmaker/${sanction_id}`, {
       state: { sanction_id, lender_code, approval_status, updatedat },
     });
-    // console.log("main data sending: ", sanction_id, lender_code, approval_status, updatedat)
   };
 
   const handleAddNewSanction = () => {
@@ -75,16 +83,22 @@ const SanctionDetailsMain = ({ isDropped }) => {
     setApprovalFilter(value);
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/sanction/fetchAll`);
+      const response = await axios.get(`${API_URL}/sanction/fetchAll`, {
+        params: {
+          token: localStorage.getItem("token")
+        }
+      })
       if (response.data.success) {
         let filteredSanctions = [];
 
-        if (value === "Approved") {
+        if (value === "All") {
+          // Combine Approved and others
+          filteredSanctions = [...response.data.mainData, ...response.data.data];
+        }
+        else if (value === "Approved") {
           filteredSanctions = response.data.mainData;
-        } else if (value) {
-          filteredSanctions = response.data.data.filter(
-            (sanction) => sanction.approval_status === value
-          );
+        } else {
+          filteredSanctions = response.data.data.filter((lender) => lender.approval_status === value);
         }
 
         setSanctions(filteredSanctions);
@@ -121,18 +135,52 @@ const SanctionDetailsMain = ({ isDropped }) => {
   }).sort((a, b) => new Date(b.updatedat || b.createdat) - new Date(a.updatedat || a.createdat));
 
   const columns = [
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Sanction Amount", dataIndex: "sanction_amount" },
-    { title: "Sanction Date", dataIndex: "sanction_date" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    // {
+    //   title: "Lender",
+    //   key: "lender",
+    //   render: (record) => {
+    //     const lenderName = record.lender_code_lender_master?.lender_name || "";
+    //     return `${record.lender_code} - ${lenderName}`;
+    //   }
+    // },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction Amount", dataIndex: "sanction_amount",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction Date", dataIndex: "sanction_date",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Approval Status",
       dataIndex: "approval_status",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (status) => getStatusTag(status),
     },
     {
       title: "Details",
       dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (code, record) => (
         <Button type="link" onClick={() => handleViewDetails(code, record.lender_code, record.approval_status, record.updatedat)}>
           View
@@ -171,8 +219,8 @@ const SanctionDetailsMain = ({ isDropped }) => {
           value={approvalFilter}
           onChange={handleStatusFilterChange}
           style={{ width: "200px", height: "40px", marginRight: "10px" }}
-          defaultValue="Approved"
         >
+          <Option value="All">All</Option>
           <Option value="Approved">Approved</Option>
           <Option value="Approval Pending">Approval Pending</Option>
           <Option value="Rejected">Rejected</Option>
@@ -186,12 +234,16 @@ const SanctionDetailsMain = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
       ) : (
-        <div style={{ position: "relative" }}>
+        <div style={{ 
+          // border: "2px solid #ccc", 
+          position: "relative", borderRadius: "8px", padding: "0px" }}>
           <Table
+            bordered
+            size="small"
             dataSource={filteredSanctions}
             columns={columns}
             rowKey="id"
-            pagination={{ pageSize: 5 }}
+            pagination={{ pageSize: 7 }}
           />
           {/* Total Records in bottom-left */}
           <div style={{ position: "absolute", bottom: "10px", left: "10px" }}>

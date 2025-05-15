@@ -20,9 +20,9 @@ const benchmarkRates = ["LIBOR", "MIBOR", "Other"];
 
 const fieldConfig = [
   { name: "lender_code", label: "Lender Code/Lender Name", required: true, type: "dropdown", options: [] },
-  { name: "sanction_id", label: "Sanction ID", required: true, type: "text", maxLength: 10 },
+  { name: "sanction_id", label: "Sanction ID", required: true, type: "text", minLength: 6, maxLength: 10 },
   { name: "loan_type", label: "Loan Type", required: true, type: "dropdown", options: loanTypes },
-  { name: "purpose_of_loan", label: "Purpose of the Loan", required: true, type: "text", maxLength: 200 },
+  { name: "purpose_of_loan", label: "Purpose of the Loan", required: true, type: "text", minLength: 6, maxLength: 200 },
   { name: "interest_type", label: "Interest Type", required: true, type: "dropdown", options: interestTypes },
   { name: "interest_rate_fixed", label: "Interest Rate (Fixed)", required: false, type: "number" },
   { name: "benchmark_rate", label: "Benchmark Rate (Floating)", required: false, type: "dropdown", options: benchmarkRates },
@@ -40,7 +40,7 @@ const fieldConfig = [
   { name: "corporate_guarantee", label: "Corporate Guarantee (%)", required: true, type: "number" },
   { name: "penal_charges", label: "Penal Charges (%)", required: true, type: "number" },
   { name: "syndication_fee", label: "Syndication Fee (%)", required: true, type: "number" },
-  { name: "syndicated_by", label: "Syndicated By", required: true, type: "text", maxLength: 100 },
+  { name: "syndicated_by", label: "Syndicated By", required: true, type: "text", minLength: 6, maxLength: 100 },
   { name: "sanction_date", label: "Sanction Date", required: true, type: "date" },
 ];
 
@@ -59,7 +59,9 @@ const SanctionDetails = ({ isDropped }) => {
   useEffect(() => {
     const fetchSanctionIds = async () => {
       try {
-        const response = await axios.get(`${API_URL}/roc/sanctionid`);
+        // BELOW CODE MAIN table call api
+        // const response = await axios.get(`${API_URL}/roc/sanctionid`);
+        const response = await axios.get(`${API_URL}/sanction/sanctionidcheck`);
         if (response.data?.data && Array.isArray(response.data.data)) {
           setSanctionIds(response.data.data.map(item => ({
             sanction_id: item.sanction_id,
@@ -113,10 +115,163 @@ const SanctionDetails = ({ isDropped }) => {
     fetchData();
   }, [API_URL]);
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    fieldConfig.forEach((field) => {
+      const value = formData[field.name];
+
+      if (field.required && (!value || value.toString().trim() === "")) {
+        newErrors[field.name] = `${field.label} is required`;
+      }
+      if (field.maxLength && value?.length < field.minLength) {
+        newErrors[field.name] = `${field.label} must be at least ${field.minLength} characters`;
+      }
+
+      if (field.maxLength && value?.length > field.maxLength) {
+        newErrors[field.name] = `${field.label} should not exceed ${field.maxLength} characters`;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
+    const sanctionAmount = Number(formData.sanction_amount);
+    if (sanctionAmount <= 0) {
+      setErrors((prev) => ({
+        ...prev,
+        sanction_amount: "Sanction Amount must be greater than 0",
+      }));
+      return;
+    } else if (sanctionAmount > 100000000) {
+      setErrors((prev) => ({
+        ...prev,
+        sanction_amount: "Sanction Amount must not exceed 100,000,000",
+      }));
+      return;
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        sanction_amount: "",
+      }));
+    }
+
+    const tenureMonths = Number(formData.tenure_months);
+    if (tenureMonths <= 0) {
+      setErrors((prev) => ({
+        ...prev,
+        tenure_months: "Tenure (Months) must be a positive number",
+      }));
+      return;
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        tenure_months: "",
+      }));
+    } 
+    
+    const processingFee = Number(formData.processing_fee);
+    const otherExpenses = Number(formData.other_expenses);
+    const bookDebtMargin = Number(formData.book_debt_margin);
+    const cashMargin = Number(formData.cash_margin);
+    const prepaymentCharges = Number(formData.prepayment_charges);
+    const corporateGuarantee = Number(formData.corporate_guarantee);
+    const penalCharges = Number(formData.penal_charges);
+    const syndicationFee = Number(formData.syndication_fee);
+
+    if (processingFee < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        processing_fee: "Processing Fee (%) must be 0 or positive number",
+      }));
+      return;
+    } 
+    else if (otherExpenses < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        other_expenses: "Other Expenses (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (bookDebtMargin < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        book_debt_margin: "Book Debt Margin (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (cashMargin < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        cash_margin: "Cash Margin (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (prepaymentCharges < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        prepayment_charges: "Prepayment Charges (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (corporateGuarantee < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        corporate_guarantee: "Corporate Guarantee (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (penalCharges < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        penal_charges: "Penal Charges (%) must be 0 or positive number",
+      }));
+      return;
+    }
+    else if (syndicationFee < 0) {
+      setErrors((prev) => ({
+        ...prev,
+        syndication_fee: "Syndication Fee (%) must be 0 or positive number",
+      }));
+      return;
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        processing_fee: "",
+        other_expenses: "",
+        book_debt_margin: "",
+        cash_margin: "",
+        prepayment_charges: "",
+        corporate_guarantee: "",
+        penal_charges: "",
+        syndication_fee: "",
+      }));
+    } 
+
+    const sanctionDate = new Date(formData.sanction_date);
+    const sanctionValidity = new Date(formData.sanction_validity);
+
+    if (sanctionValidity <= sanctionDate) {
+      setErrors((prev) => ({
+        ...prev,
+        sanction_validity: "Sanction Validity must be after the Sanction Date",
+      }));
+      return;
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        sanction_validity: "",
+      }));
+    }
+
     // console.log("Submitting 1:", formData);
     const createdby = localStorage.getItem("token");  // Assuming token is the user ID
     const updatedby = localStorage.getItem("token");
@@ -138,9 +293,9 @@ const SanctionDetails = ({ isDropped }) => {
         body: JSON.stringify(finalFormData),
       });
 
-      const data = await response.json();
-
+      // const data = await response.json();
       // console.log("Response Data sent: ", data);
+
       if (!response.ok) {
         const errorData = await response.json();
 
@@ -183,9 +338,9 @@ const SanctionDetails = ({ isDropped }) => {
         transition: "margin-left 0.3s ease",
         width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
         padding: 3,
-        border: "1px solid #ccc",
+        border: "3px solid #ccc",
         borderRadius: 2,
-        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+        // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
       }}
     >
       <Typography
@@ -208,7 +363,7 @@ const SanctionDetails = ({ isDropped }) => {
           {fieldConfig.map((field) => (
             <Grid item xs={12} sm={6} key={field.name}>
               {field.type === "dropdown" ? (
-                <FormControl fullWidth required={field.required}>
+                <FormControl fullWidth required={field.required} error={!!errors[field.name]}>
                   <InputLabel>{field.label}</InputLabel>
                   <Select
                     name={field.name}

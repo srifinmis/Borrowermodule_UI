@@ -7,10 +7,10 @@ const fieldConfig = [
     { name: "lender_code", label: "Lender Code", type: "select", readOnly: true },
     { name: "sanction_id", label: "Sanction Id", type: "select", readOnly: true },
     { name: "tranche_id", label: "Tranche ID", type: "select", readOnly: true },
-    { name: "new_interest_rate", label: "New Interest Rate(%)", type: "number" },
-    { name: "effective_date", label: "Effective Date" },
-    { name: "updatedby", label: "Updated By" },
-    { name: "updatedat", label: "Updated Date" }
+    { name: "new_interest_rate", label: "New Interest Rate(%)", type: "number", required: true },
+    { name: "effective_date", label: "Effective Date", type: "date", required: true, },
+    { name: "updatedby", label: "Updated By", type: "text", required: true, minLength: 6, maxLength: 100 },
+    { name: "updatedat", label: "Updated Date", type: "date", required: true }
 ];
 
 const InterestRatemaker = ({ isDropped }) => {
@@ -23,6 +23,7 @@ const InterestRatemaker = ({ isDropped }) => {
     const [sanctionIds, setSanctionIds] = useState([]);
     const [trancheIds, setTrancheIds] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [originalLender, setOriginalLender] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
@@ -61,6 +62,7 @@ const InterestRatemaker = ({ isDropped }) => {
                 });
                 if (response.status === 200) {
                     setSanction(response.data.interest);
+                    setOriginalLender(response.data.interest);
                 }
             } catch (error) {
                 console.error("Error fetching interest rate details:", error);
@@ -93,7 +95,7 @@ const InterestRatemaker = ({ isDropped }) => {
                 const errorResponse = await response.json();
                 alert(errorResponse.message || "Failed to update interest rate.");
             }
-
+            navigate("/DataCreation/InterestRate");
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating interest rate:", error);
@@ -102,6 +104,10 @@ const InterestRatemaker = ({ isDropped }) => {
     };
 
     const handleBack = () => navigate("/DataCreation/InterestRate");
+    const hasChanges = (current, original) => {
+        if (!current || !original) return false;
+        return JSON.stringify(current) !== JSON.stringify(original);
+    };
 
     const handleChange = (e) => {
         setSanction({ ...sanction, [e.target.name]: e.target.value });
@@ -120,9 +126,9 @@ const InterestRatemaker = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 3,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 2,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <Typography
@@ -153,9 +159,12 @@ const InterestRatemaker = ({ isDropped }) => {
                                         select
                                         label={field.label}
                                         name={field.name}
+                                        type={field.type}
                                         value={sanction[field.name] || ""}
                                         fullWidth
+                                        required={field.required}
                                         disabled={field.readOnly}
+                                        InputLabelProps={field.type === "date" ? { shrink: true } : {}}
                                         sx={{ backgroundColor: "#ebeced" }}
                                     >
                                         {(field.name === "sanction_id"
@@ -172,9 +181,12 @@ const InterestRatemaker = ({ isDropped }) => {
                                     <TextField
                                         label={field.label}
                                         name={field.name}
+                                        type={field.type}
                                         value={sanction[field.name] || ""}
                                         fullWidth
+                                        required={field.required}
                                         onChange={handleChange}
+                                        InputLabelProps={field.type === "date" ? { shrink: true } : {}}
                                         InputProps={{ readOnly: !isEditing || field.readOnly }}
                                         sx={{
                                             cursor: "default",
@@ -194,7 +206,7 @@ const InterestRatemaker = ({ isDropped }) => {
                             Back
                         </Button>
                         {isEditing ? (
-                            <Button variant="contained" color="primary" onClick={handleUpdate}>
+                            <Button variant="contained" color="primary" onClick={handleUpdate} disabled={!hasChanges(sanction, originalLender)}>
                                 Update
                             </Button>
                         ) : (
@@ -203,6 +215,11 @@ const InterestRatemaker = ({ isDropped }) => {
                             </Button>
                         )}
                     </Box>
+                    {isEditing && !hasChanges(sanction, originalLender) && (
+                        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", mt: 1 }}>
+                            Make changes to enable the Update button.
+                        </Typography>
+                    )}
                 </Paper>
             ) : (
                 <Typography sx={{ textAlign: "center", marginTop: 2 }}>

@@ -97,7 +97,6 @@ const LenderMasterApproval = ({ isDropped }) => {
       message.warning("No lenders selected.");
       return;
     }
-
     // console.log("Approval Request Data: ", selectedRows); // Debugging
 
     try {
@@ -171,7 +170,6 @@ const LenderMasterApproval = ({ isDropped }) => {
       message.warning("No lenders selected.");
       return;
     }
-
     // console.log("Reject Request Data: ", selectedRows);
 
     try {
@@ -256,6 +254,7 @@ const LenderMasterApproval = ({ isDropped }) => {
       title: (
         <Checkbox
           onChange={handleSelectAll}
+          style={{ transform: "scale(1.6)" }}
           checked={
             selectedRows.length === lenders.length &&
             selectedRows.every((row, index) =>
@@ -266,8 +265,12 @@ const LenderMasterApproval = ({ isDropped }) => {
         />
       ),
       dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (_, lender) => (
         <Checkbox
+          style={{ transform: "scale(1.6)" }}
           checked={selectedRows.some(
             (row) =>
               row.lender_code === lender.lender_code &&
@@ -277,14 +280,37 @@ const LenderMasterApproval = ({ isDropped }) => {
         />
       ),
     },
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Lender Name", dataIndex: "lender_name" },
-    { title: "Lender Type", dataIndex: "lender_type" },
-    { title: "Status", dataIndex: "status" },
-    { title: "Lender Email", dataIndex: "lender_email_id_1" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Lender Name", dataIndex: "lender_name",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Lender Type", dataIndex: "lender_type",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Status", dataIndex: "status",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    // { title: "Lender Escalation Email", dataIndex: "lender_escalation_email" },
     {
       title: "Details",
       dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (code, record) => <Button type="link" onClick={() => handleViewDetails(code, record.approval_status, record.lender_name, record.updatedat)}>View</Button>,
     },
   ];
@@ -301,9 +327,9 @@ const LenderMasterApproval = ({ isDropped }) => {
       transition: "margin-left 0.3s ease-in-out",
       width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
       padding: 3,
-      border: "1px solid #ccc",
+      border: "3px solid #ccc",
       borderRadius: 10,
-      boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+      // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
     }}>
       <ToastContainer position="top-right" autoClose={5000} />
       <Typography
@@ -326,9 +352,20 @@ const LenderMasterApproval = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ margin: "20px auto" }} />
       ) : lenders.length === 0 ? (
-        <p style={{ textAlign: "center", marginTop: 20 }}>No lenders available</p>
+        <p style={{ textAlign: "center", marginTop: 20 }}>No Pending lenders available</p>
       ) : (
-        <Table dataSource={lenders} columns={columns} rowKey="lender_code" pagination={false} />
+        // <Table style={{}} bordered dataSource={lenders} columns={columns} rowKey="lender_code" pagination={false} />
+        <div style={{ height: 460, overflowY: 'auto' }}>
+          <Table
+            bordered
+            dataSource={lenders}
+            columns={columns}
+            rowKey="lender_code"
+            pagination={false}
+            scroll={{ y: 400 }} // Fixed height for scrollable body with sticky header
+          />
+
+        </div>
       )}
 
       <div style={{ marginTop: 20, display: "flex", justifyContent: "center", marginRight: "20px" }}>

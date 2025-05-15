@@ -3,10 +3,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    /* background: linear-gradient(135deg, #eff1f1, #B0BEC5); */
+    height: 92.5vh;
     background: linear-gradient(135deg, #d8f0f5, #B0BEC5);
-
     padding: 20px;
 }
 
@@ -30,7 +28,7 @@
     border-radius: 15px;
     padding: 20px;
     width: 100%;
-    box-shadow: inset 4px 4px 10px rgba(255,255,255,0.2), inset -4px -4px 10px rgba(0,0,0,0.1);
+    box-shadow: inset 4px 4px 4px rgba(255, 255, 255, 0.2);
 }
 
 .login-right {
@@ -105,20 +103,23 @@ input {
 /* Responsive Design */
 @media (max-width: 700px) {
     .login-container {
-        flex-direction: column; /* Stack items vertically */
+        flex-direction: column;
+        /* Stack items vertically */
         width: 90%;
         /* height: 100vh; */
         padding: 20px;
     }
 
     .login-left {
-        order: 1; /* Move login-left to the top */
+        order: 1;
+        /* Move login-left to the top */
         border-radius: 15px 15px 0 0;
         height: 250px;
     }
 
     .login-right {
-        order: 2; /* Move login-right below */
+        order: 2;
+        /* Move login-right below */
         border-radius: 0 0 15px 15px;
         height: 250px;
     }

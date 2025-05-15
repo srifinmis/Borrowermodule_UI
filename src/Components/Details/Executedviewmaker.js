@@ -37,7 +37,7 @@ const Executedmaker = ({ isDropped }) => {
             }
         };
         fetchLenderDetails();
-    }, [API_URL,sanction_id]);
+    }, [API_URL, sanction_id]);
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -60,6 +60,7 @@ const Executedmaker = ({ isDropped }) => {
             } else {
                 alert("Execution Documents updated Sent to Approval failed.");
             }
+            navigate("/DataCreation/ExecutedDocuments");
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating ROC details:", error);
@@ -88,9 +89,9 @@ const Executedmaker = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 3,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 2,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <Typography

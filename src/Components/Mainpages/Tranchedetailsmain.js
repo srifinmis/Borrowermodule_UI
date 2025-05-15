@@ -14,7 +14,7 @@ const TrancheDetailsMain = ({ isDropped }) => {
   const [trancheDetails, setTrancheDetails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [approvalFilter, setApprovalFilter] = useState("Approved");
+  const [approvalFilter, setApprovalFilter] = useState("All");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,10 +37,13 @@ const TrancheDetailsMain = ({ isDropped }) => {
 
       try {
         const response = await axios.get(`${API_URL}/tranche/fetchAll`);
-
+        console.log("fetch all tranche: ", response)
         if (response.data.success) {
-          const approvedTranches = response.data.mainData;
-          setTrancheDetails(approvedTranches);
+          const combinedTranche = [
+            ...response.data.mainData,
+            ...response.data.data,
+          ];
+          setTrancheDetails(combinedTranche);
         } else {
           message.error("Failed to fetch Tranche details");
         }
@@ -55,9 +58,10 @@ const TrancheDetailsMain = ({ isDropped }) => {
     fetchTrancheDetails();
   }, [API_URL]);
 
-  const handleViewDetails = (tranche_id, lender_code, sanction_id, approval_status, updatedat) => {
+  const handleViewDetails = (tranche_id, id, lender_code, sanction_id, approval_status, updatedat) => {
+    console.log("main view: ", tranche_id, id, lender_code, sanction_id, approval_status, updatedat)
     navigate(`/tranchemaker/${tranche_id}`, {
-      state: { tranche_id, lender_code, sanction_id, approval_status, updatedat },
+      state: { tranche_id, id, lender_code, sanction_id, approval_status, updatedat },
     });
   };
 
@@ -78,15 +82,14 @@ const TrancheDetailsMain = ({ isDropped }) => {
       if (response.data.success) {
         let filteredTranches = [];
 
-        if (value === "Approved") {
-          filteredTranches = response.data.mainData; // Only approved tranches
-        } else if (value) {
-          filteredTranches = response.data.data.filter(
-            (tranche) => tranche.approval_status === value
-          );
-        } else {
-          // Show all tranches (both approved and others)
+        if (value === "All") {
+          // Combine Approved and others
           filteredTranches = [...response.data.mainData, ...response.data.data];
+        }
+        else if (value === "Approved") {
+          filteredTranches = response.data.mainData;
+        } else {
+          filteredTranches = response.data.data.filter((lender) => lender.approval_status === value);
         }
 
         setTrancheDetails(filteredTranches);
@@ -113,22 +116,58 @@ const TrancheDetailsMain = ({ isDropped }) => {
     )).sort((a, b) => new Date(b.updatedat || b.createdat) - new Date(a.updatedat || a.createdat));
 
   const columns = [
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Tranche ID", dataIndex: "tranche_id" },
-    { title: "Tranche Amount", dataIndex: "tranche_amount" },
-    { title: "Interest Type", dataIndex: "interest_type" },
-    { title: "Interest Rate", dataIndex: "interest_rate" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche ID", dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche Amount", dataIndex: "tranche_amount",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Interest Type", dataIndex: "interest_type",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Interest Rate", dataIndex: "interest_rate",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Approval Status",
       dataIndex: "approval_status",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (status) => <Tag color={statusColors[status] || "blue"}>{status}</Tag>,
     },
     {
       title: "Details",
       dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (id, record) => (
-        <Button type="link" onClick={() => handleViewDetails(id, record.lender_code, record.sanction_id, record.approval_status, record.updatedat)}>
+        <Button type="link" onClick={() => handleViewDetails(id, record.id, record.lender_code, record.sanction_id, record.approval_status, record.updatedat)}>
           View
         </Button>
       ),
@@ -141,6 +180,7 @@ const TrancheDetailsMain = ({ isDropped }) => {
         display: "flex",
         flexDirection: "column",
         marginTop: "70px",
+        height: "300px",
         marginLeft: isDropped ? "100px" : "280px",
         transition: "margin-left 0.3s ease-in-out",
         width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
@@ -162,6 +202,7 @@ const TrancheDetailsMain = ({ isDropped }) => {
           style={{ width: "200px", height: "40px" }}
           placeholder="Filter by status"
         >
+          <Option value="All">All</Option>
           <Option value="Approved">Approved</Option>
           <Option value="Rejected">Rejected</Option>
           <Option value="Approval Pending">Approval Pending</Option>
@@ -174,12 +215,16 @@ const TrancheDetailsMain = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
       ) : (
-        <div style={{ position: "relative" }}>
+        <div style={{ 
+          // border: "2px solid #ccc",
+           position: "relative", borderRadius: "8px", padding: "0px" }}>
           <Table
+            bordered
+             size="small"
             dataSource={filteredTranches}
             columns={columns}
             rowKey="id"
-            pagination={{ pageSize: 5 }}
+            pagination={{ pageSize: 7 }}
           />
           {/* Total Records in bottom-left */}
           <div style={{ position: "absolute", bottom: "10px", left: "10px" }}>

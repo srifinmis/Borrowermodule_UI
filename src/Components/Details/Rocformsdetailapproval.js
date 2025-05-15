@@ -98,9 +98,9 @@ const LenderDetailsapprove = ({ isDropped }) => {
                 body: JSON.stringify([{ ...dataSend, remarks }]),
             });
 
-            const data = await response.json();
-
+            // const data = await response.json();
             // console.log("Response Data sent: ", data);
+            
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("Server responded with error:", errorData);
@@ -137,9 +137,9 @@ const LenderDetailsapprove = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 3,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 2,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <Typography

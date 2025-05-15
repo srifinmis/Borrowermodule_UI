@@ -14,7 +14,7 @@ const InterestRateChangeMain = ({ isDropped }) => {
   const [interestRates, setInterestRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Approved");
+  const [filterStatus, setFilterStatus] = useState("All");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,29 +73,83 @@ const InterestRateChangeMain = ({ isDropped }) => {
     "Approval Pending": "orange",
   };
 
-  const displayedInterestRates = interestRates.filter(
-    (rate) =>
-      (!filterStatus || rate.approval_status === filterStatus) &&
-      Object.values(rate).some((field) =>
-        field && field.toString().toLowerCase().includes(searchText)
-      )).sort((a, b) => new Date(b.updatedat || b.createdat) - new Date(a.updatedat || a.createdat));
+  const displayedInterestRates = interestRates
+    .filter((rate) => {
+      const matchesStatus =
+        filterStatus === "All" || rate.approval_status === filterStatus;
+
+      const matchesSearch = Object.values(rate).some((field) =>
+        field?.toString().toLowerCase().includes(searchText)
+      );
+
+      return matchesStatus && matchesSearch;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.updatedat || b.createdat) -
+        new Date(a.updatedat || a.createdat)
+    );
 
   const columns = [
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Tranche ID", dataIndex: "tranche_id" },
-    { title: "New Interest Rate (%)", dataIndex: "new_interest_rate" },
-    { title: "Effective Date", dataIndex: "effective_date" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche ID", dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "New Interest Rate (%)", dataIndex: "new_interest_rate",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Effective Date", dataIndex: "effective_date",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Approval Status",
       dataIndex: "approval_status",
-      render: (status) => <Tag color={statusColors[status] || "blue"}>{status}</Tag>,
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+      render: (status) => (
+        <Tag color={statusColors[status] || "blue"}>{status}</Tag>
+      ),
     },
     {
       title: "Details",
       dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (id, record) => (
-        <Button type="link" onClick={() => handleViewDetails(id, record.lender_code, record.tranche_id, record.approval_status, record.createdat)}>
+        <Button
+          type="link"
+          onClick={() =>
+            handleViewDetails(
+              id,
+              record.lender_code,
+              record.tranche_id,
+              record.approval_status,
+              record.createdat
+            )
+          }
+        >
           View
         </Button>
       ),
@@ -107,6 +161,7 @@ const InterestRateChangeMain = ({ isDropped }) => {
       style={{
         display: "flex",
         flexDirection: "column",
+        height: "400px",
         marginTop: "70px",
         marginLeft: isDropped ? "100px" : "280px",
         transition: "margin-left 0.3s ease-in-out",
@@ -115,19 +170,29 @@ const InterestRateChangeMain = ({ isDropped }) => {
       }}
     >
       <ToastContainer position="top-right" autoClose={5000} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>Interest Rate Change</h2>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <h2 style={{ flex: 1 }}>Interest Rate Change</h2>
         <Input
           placeholder="Search interest rate changes..."
           value={searchText}
           onChange={handleSearch}
-          style={{ width: "300px", height: "40px" }}
+          style={{ width: "250px", height: "40px" }}
         />
         <Select
           value={filterStatus}
           onChange={setFilterStatus}
           style={{ width: "200px", height: "40px" }}
         >
+          <Option value="All">All</Option>
           <Option value="Approved">Approved</Option>
           <Option value="Approval Pending">Approval Pending</Option>
           <Option value="Rejected">Rejected</Option>
@@ -140,14 +205,18 @@ const InterestRateChangeMain = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
       ) : (
-        <div style={{ position: "relative" }}>
+        <div style={{
+          // border: "2px solid #ccc", 
+          position: "relative", borderRadius: "8px", padding: "0px"
+        }}>
           <Table
+            bordered
+            size="small"
             dataSource={displayedInterestRates}
             columns={columns}
             rowKey="change_id"
-            pagination={{ pageSize: 5 }}
+            pagination={{ pageSize: 6 }}
           />
-          {/* Total Records in bottom-left */}
           <div style={{ position: "absolute", bottom: "10px", left: "10px" }}>
             Total Records : {displayedInterestRates.length}
           </div>

@@ -14,7 +14,7 @@ const LenderMastermain = ({ isDropped }) => {
   const [lenders, setLenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Approved");
+  const [filterStatus, setFilterStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
   useEffect(() => {
@@ -33,9 +33,14 @@ const LenderMastermain = ({ isDropped }) => {
 
       try {
         const response = await axios.get(`${API_URL}/lender/list`);
+        console.log("res: ", response)
 
         if (response.data.success) {
-          setLenders(response.data.mainData);
+          const combinedLenders = [
+            ...response.data.mainData,
+            ...response.data.data,
+          ];
+          setLenders(combinedLenders);
         } else {
           message.error("Failed to fetch lenders");
         }
@@ -73,11 +78,16 @@ const LenderMastermain = ({ isDropped }) => {
       if (response.data.success) {
         let filteredLenders = [];
 
-        if (value === "Approved") {
+        if (value === "") {
+          // Combine Approved and others
+          filteredLenders = [...response.data.mainData, ...response.data.data];
+        }
+        else if (value === "Approved") {
           filteredLenders = response.data.mainData;
-        } else if (value) {
+        } else {
           filteredLenders = response.data.data.filter((lender) => lender.approval_status === value);
         }
+
         setLenders(filteredLenders);
       } else {
         message.error("Failed to filter lenders");
@@ -89,6 +99,7 @@ const LenderMastermain = ({ isDropped }) => {
       setLoading(false);
     }
   };
+
 
   const handleTableChange = (pagination) => {
     setCurrentPage(pagination.current);
@@ -109,18 +120,44 @@ const LenderMastermain = ({ isDropped }) => {
     .sort((a, b) => new Date(b.updatedat || b.createdat) - new Date(a.updatedat || a.createdat));
 
   const columns = [
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Lender Name", dataIndex: "lender_name" },
-    { title: "Lender Type", dataIndex: "lender_type" },
-    { title: "Lender Email", dataIndex: "lender_email_id_1" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Lender Name", dataIndex: "lender_name",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Lender Type", dataIndex: "lender_type",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    // {
+    //   title: "Lender Email", dataIndex: "lender_escalation_email",
+    //   onHeaderCell: () => ({
+    //     style: { backgroundColor: "#a2b0cc", color: "black" }
+    //   }),
+    // },
     {
       title: "Approval Status",
       dataIndex: "approval_status",
       render: (status) => <Tag color={statusColors[status] || "blue"}>{status}</Tag>,
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
     },
     {
       title: "Details",
       dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (code, record) => (
         <Button type="link" onClick={() => handleViewDetails(code, record.approval_status, record.lender_name, record.updatedat)}>
           View
@@ -133,7 +170,8 @@ const LenderMastermain = ({ isDropped }) => {
     <Box
       style={{
         display: "flex",
-        height: "300px",
+        height: "auto",
+        position: "fixed",
         flexDirection: "column",
         marginTop: "70px",
         marginLeft: isDropped ? "100px" : "280px",
@@ -156,6 +194,7 @@ const LenderMastermain = ({ isDropped }) => {
           onChange={handleFilterChange}
           style={{ width: "200px", height: "40px" }}
           placeholder="Filter by status">
+          <Option value="">All</Option>
           <Option value="Approved">Approved</Option>
           <Option value="Rejected">Rejected</Option>
           <Option value="Approval Pending">Approval Pending</Option>
@@ -168,24 +207,36 @@ const LenderMastermain = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ display: "block", margin: "20px auto" }} />
       ) : (
-        <div style={{ position: "relative" }}>
+        <div
+          style={{
+            position: "relative",
+            borderRadius: "8px",
+            padding: "0px",
+          }}
+        >
+          {/* <div style={{ height: '450px', overflowY: 'auto' }}> */}
           <Table
+            bordered
+            style={{ margin: 0, padding: 0 }}
+            size="small"
             dataSource={filteredLenders}
             columns={columns}
             rowKey="id"
             pagination={{
               current: currentPage,
-              pageSize: 5,
+              pageSize: 7,
               total: filteredLenders.length,
               onChange: handleTableChange,
               showSizeChanger: false,
               position: ["bottomRight"], // Keeps pagination at bottom-right
             }}
+            scroll={{ y: 400 }}
           />
           {/* Total Records in bottom-left */}
-          <div style={{ position: "absolute", bottom: "10px", left: "10px" }}>
+          <div style={{ position: "absolute", bottom: "30px", left: "10px" }}>
             Total Records : {filteredLenders.length}
           </div>
+          {/* </div> */}
         </div>
 
       )}

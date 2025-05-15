@@ -2,14 +2,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const BackButton = () => {
+const BackButton = ({ isDropped }) => {
   const navigate = useNavigate();
 
   return (
     <button
       style={{
         position: "fixed",
-        left: "265px",
+        left: isDropped ? "90px" : "265px",
         top: "65px",
         padding: "8px 12px",
         borderRadius: "6px",
@@ -18,6 +18,7 @@ const BackButton = () => {
         border: "none",
         cursor: "pointer",
         zIndex: 2000,
+        transition: "left 0.3s ease", 
       }}
       onClick={() => navigate(-1)}
     >

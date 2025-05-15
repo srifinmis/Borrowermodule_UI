@@ -1,143 +1,186 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  Box, Button, Grid, TextField, MenuItem, Select, InputLabel, FormControl,
-  Typography, CircularProgress
-} from '@mui/material';
+  Box,
+  Button,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Typography,
+  Grid,
+} from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+const API_URL = process.env.REACT_APP_API_URL;
 
-const SanctionDetailsReport = ({ isDropped }) => {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [lenderCode, setLenderCode] = useState('');
-  const [loanType, setLoanType] = useState('');
-  const [format, setFormat] = useState('Excel');
-  const [loading, setLoading] = useState(false);
-  const [downloadLink, setDownloadLink] = useState('');
+const SanctionMasterReport = ({ isDropped }) => {
+  const [fromDate, setFromDate] = useState(dayjs());
+  const [toDate, setToDate] = useState(dayjs());
+  const [lenders, setLenders] = useState([]);
+  const [selectedLenders, setSelectedLenders] = useState([]);
+  const [format, setFormat] = useState("excel");
+  const [sortBy, setSortBy] = useState("sanction_date");
 
-  const generateReport = async () => {
-    setLoading(true);
-    setDownloadLink('');
+  useEffect(() => {
+    fetch(`${API_URL}/sanction/lendercodes`)
+      .then((res) => res.json())
+      .then((data) => {
+        const lendersList = data.data.map(lender => ({
+          lender_code: lender.lender_code,
+          lender_name: lender.lender_name
+        }));
+        setLenders(lendersList);
+      })
+      .catch((err) => console.error("Failed to fetch lenders", err));
+  }, []);
 
-    const reportParams = { startDate, endDate, lenderCode, loanType, format };
+  const handleGenerateReport = async () => {
+    const payload = {
+      fromDate: fromDate.format("YYYY-MM-DD"),
+      toDate: toDate.format("YYYY-MM-DD"),
+      lenders: selectedLenders.includes("all") ? "all" : selectedLenders,
+      format,
+      sortBy,
+    };
 
     try {
-      const response = await fetch(`http://localhost:5002/generate-sanction-details-report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reportParams),
+      const res = await fetch(`${API_URL}/generate-sanction-master`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Failed to generate report');
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to generate report: ${errorText}`);
+      }
 
-      const data = await response.json();
-      setDownloadLink(data.downloadUrl);
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while generating the report.');
-    } finally {
-      setLoading(false);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const extensionMap = {
+        excel: "xlsx",
+        pdf: "pdf",
+        word: "docx"
+      };
+      a.download = `Sanction_Master_Report.${extensionMap[format]}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error generating report:", err.message);
+    alert("Something went wrong while generating the report.");
     }
   };
 
   return (
-    <Box sx={{
-      display: "flex",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: 2,
-      margin: "auto",
-      marginTop: "70px",
-      marginLeft: isDropped ? "100px" : "280px",
-      transition: "margin-left 0.3s ease-in-out",
-      width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
-      padding: 3,
-      border: "1px solid #ccc",
-      borderRadius: 2,
-      boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
-    }}>
-      <Typography sx={{
-        color: "#0056b3",
-        fontWeight: "600",
-        fontSize: "20px",
-        marginBottom: "20px",
-        textAlign: "center",
-        textTransform: "uppercase",
-        letterSpacing: "1px",
-        borderBottom: "2px solid #0056b3",
-        paddingBottom: "10px",
-      }}>
-        Sanction Details Report
-      </Typography>
-
-      <Grid container spacing={3} sx={{ marginTop: 2 }}>
-        <Grid item xs={6}>
-          <TextField
-            label="Start Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <TextField
-            label="End Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={3} sx={{ marginTop: 2 }}>
-        <Grid item xs={6}>
-          <TextField
-            label="Lender Code (Optional)"
-            fullWidth
-            value={lenderCode}
-            onChange={(e) => setLenderCode(e.target.value)}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <FormControl fullWidth>
-            <InputLabel>Loan Type (Optional)</InputLabel>
-            <Select value={loanType} onChange={(e) => setLoanType(e.target.value)}>
-              <MenuItem value="Home Loan">Home Loan</MenuItem>
-              <MenuItem value="Car Loan">Car Loan</MenuItem>
-              <MenuItem value="Personal Loan">Personal Loan</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={3} sx={{ marginTop: 2 }}>
-        <Grid item xs={6}>
-          <FormControl fullWidth>
-            <InputLabel>Output Format</InputLabel>
-            <Select value={format} onChange={(e) => setFormat(e.target.value)}>
-              <MenuItem value="Excel">Excel</MenuItem>
-              <MenuItem value="PDF">PDF</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ textAlign: 'center', marginTop: 3 }}>
-        <Button variant="contained" onClick={generateReport} disabled={loading}>
-          {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Generate Report'}
-        </Button>
-      </Box>
-
-      {downloadLink && (
-        <Typography variant="body2" sx={{ marginTop: '20px', textAlign: 'center' }}>
-          Your report is ready! <a href={downloadLink} download>Click here to download</a>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 2,
+          marginTop: "70px",
+          marginLeft: isDropped ? "100px" : "280px",
+          transition: "margin-left 0.3s ease",
+          width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
+          padding: 3,
+          border: "1px solid #ccc",
+          borderRadius: 2,
+          boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+        }}
+      >
+        <Typography
+          sx={{
+            color: "#0056b3",
+            fontWeight: "600",
+            fontSize: "20px",
+            textAlign: "center",
+            textTransform: "uppercase",
+            borderBottom: "2px solid #0056b3",
+            paddingBottom: "10px",
+            mb: 3,
+          }}
+        >
+          Sanction Master Report
         </Typography>
-      )}
-    </Box>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <DatePicker
+              label="From Date"
+              value={fromDate}
+              onChange={(date) => setFromDate(date)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <DatePicker
+              label="To Date"
+              value={toDate}
+              onChange={(date) => setToDate(date)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
+              <InputLabel>Lender(s)</InputLabel>
+              <Select
+                multiple
+                value={selectedLenders}
+                onChange={(e) => setSelectedLenders(e.target.value)}
+                label="Lender(s)"
+              >
+                <MenuItem value="all">All</MenuItem>
+                {lenders.map((lender) => (
+                  <MenuItem key={lender.lender_code} value={lender.lender_code}>
+                    {lender.lender_code}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth>
+              <InputLabel>Sort By</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                label="Sort By"
+              >
+                <MenuItem value="lender_code">Lender Code</MenuItem>
+                <MenuItem value="sanction_date">Sanction Date</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth>
+              <InputLabel>Format</InputLabel>
+              <Select
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                label="Format"
+              >
+                <MenuItem value="excel">Excel</MenuItem>
+                <MenuItem value="pdf">PDF</MenuItem>
+                <MenuItem value="word">Word</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+
+        <Box mt={3} display="flex" justifyContent="center">
+          <Button variant="contained" onClick={handleGenerateReport}>
+            Generate Report
+          </Button>
+        </Box>
+      </Box>
+    </LocalizationProvider>
   );
 };
 
-export default SanctionDetailsReport;
- 
+export default SanctionMasterReport;

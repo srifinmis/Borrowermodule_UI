@@ -166,24 +166,56 @@ const ExecutedDocumentApproval = ({ isDropped }) => {
 
     const columns = [
         {
-            title: <Checkbox onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
+            title: <Checkbox style={{ transform: "scale(1.6)" }} onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
             dataIndex: "sanction_id",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
             render: (_, lender) => (
                 <Checkbox
-                    checked={selectedRows.some((row) => row.document_id === lender.document_id && row.sanction_id === lender.sanction_id)}
+                    style={{ transform: "scale(1.6)" }}
+                    checked={selectedRows.some((row) => row.lender_code === lender.lender_code && row.sanction_id === lender.sanction_id)}
                     onChange={() => handleSelect(lender)}
                 />
             ),
         },
-        { title: "Lender Code", dataIndex: "lender_code" },
-        { title: "Sanction ID", dataIndex: "sanction_id" },
-        { title: "Document Type", dataIndex: "document_type" },
-        { title: "File Name", dataIndex: "file_name" },
-        { title: "Uploaded Date", dataIndex: "uploaded_date" },
+        {
+            title: "Lender Code", dataIndex: "lender_code",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
+        {
+            title: "Sanction ID", dataIndex: "sanction_id",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
+        {
+            title: "Document Type", dataIndex: "document_type",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
+        {
+            title: "File Name", dataIndex: "file_name",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
+        {
+            title: "Uploaded Date", dataIndex: "uploaded_date",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
+        },
         // { title: "Remarks", dataIndex: "remarks" },
         {
             title: "Actions",
             key: "actions",
+            onHeaderCell: () => ({
+                style: { backgroundColor: "#a2b0cc", color: "black" }
+            }),
             render: (record) => (
                 <>
                     <Button type="link" onClick={() => handleViewDetails(record.sanction_id, record.lender_code)}>
@@ -204,9 +236,9 @@ const ExecutedDocumentApproval = ({ isDropped }) => {
                 transition: "margin-left 0.3s ease-in-out",
                 width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
                 padding: 20,
-                border: "1px solid #ccc",
+                border: "3px solid #ccc",
                 borderRadius: 10,
-                boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+                // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
             }}
         >
             <ToastContainer position="top-right" autoClose={5000} />
@@ -229,7 +261,7 @@ const ExecutedDocumentApproval = ({ isDropped }) => {
             {loading ? (
                 <Spin size="large" style={{ margin: "20px auto" }} />
             ) : (
-                <Table dataSource={lenders} columns={columns} rowKey="sanction_id" pagination={false} />
+                <Table bordered dataSource={lenders} columns={columns} rowKey="sanction_id" pagination={false} />
             )}
             <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 10 }}>
                 <TextField

@@ -1,10 +1,10 @@
-//////////////2:00 pm update 
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 import { message } from "antd";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Box, Grid, Card, CardContent, Typography, Modal, CircularProgress, IconButton } from "@mui/material";
 import "./Dashboard.css";
 
@@ -22,11 +22,24 @@ const Dashboard = ({ isDropped }) => {
 
   useEffect(() => {
     const fetchLenderDetails = async () => {
+      setLoading(true);
+      const submissionMessage = localStorage.getItem("submissionMessage");
+      const messageType = localStorage.getItem("messageType");
+
+      if (submissionMessage) {
+        if (messageType === "success") {
+          toast.success(submissionMessage);
+        } else if (messageType === "error") {
+          toast.error(submissionMessage);
+        }
+        setTimeout(() => {
+          localStorage.removeItem("submissionMessage");
+          localStorage.removeItem("messageType");
+        }, 5000);
+      }
       try {
         const response = await axios.get(`${API_URL}/Load/AllData`);
         if (response.status === 200) {
-          // console.log("Success fetching lender details:", response.data);
-          // setAssets(response.data.assets || []);
           setApprovalData(response.data);
         } else {
           message.error("Failed to fetch lender details");
@@ -58,6 +71,8 @@ const Dashboard = ({ isDropped }) => {
         boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
       }}
     >
+      <ToastContainer position="top-right" autoClose={5000} />
+
       <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 4 }, mt: 0 }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}>

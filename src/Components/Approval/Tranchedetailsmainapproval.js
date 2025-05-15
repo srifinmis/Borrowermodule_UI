@@ -111,9 +111,9 @@ const TrancheDetailsApproval = ({ isDropped }) => {
       message.error("Approval failed.");
     }
   };
-  const handleViewDetails = (tranche_id, lender_code, sanction_id, approval_status, updatedat) => {
+  const handleViewDetails = (tranche_id, id, lender_code, sanction_id, approval_status, updatedat) => {
     navigate(`/trancheapprove/${tranche_id}`, {
-      state: { tranche_id, lender_code, sanction_id, approval_status, updatedat },
+      state: { tranche_id, id, lender_code, sanction_id, approval_status, updatedat },
     });
   };
   const handleReject = async () => {
@@ -169,25 +169,62 @@ const TrancheDetailsApproval = ({ isDropped }) => {
 
   const columns = [
     {
-      title: <Checkbox onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
+      title: <Checkbox style={{ transform: "scale(1.6)" }} onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
       dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (_, lender) => (
         <Checkbox
-          checked={selectedRows.some((row) => row.tranche_id === lender.tranche_id)}
+          style={{ transform: "scale(1.6)" }}
+          checked={selectedRows.some((row) => row.lender_code === lender.lender_code && row.sanction_id === lender.sanction_id && row.tranche_id === lender.tranche_id)}
           onChange={() => handleSelect(lender)}
         />
       ),
     },
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Tranche ID", dataIndex: "tranche_id" },
-    { title: "Tranche Date", dataIndex: "tranche_date" },
-    { title: "Tranche Amount", dataIndex: "tranche_amount" },
-    { title: "Interest Type", dataIndex: "interest_type" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche ID", dataIndex: "tranche_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche Date", dataIndex: "tranche_date",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Tranche Amount", dataIndex: "tranche_amount",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Interest Type", dataIndex: "interest_type",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Details",
       dataIndex: "tranche_id",
-      render: (code, record) => <Button type="link" onClick={() => handleViewDetails(code, record.lender_code, record.sanction_id, record.approval_status, record.updatedat)}>View</Button>,
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+      render: (code, record) => <Button type="link" onClick={() => handleViewDetails(code, record.id, record.lender_code, record.sanction_id, record.approval_status, record.updatedat)}>View</Button>,
     },
   ];
 
@@ -201,9 +238,9 @@ const TrancheDetailsApproval = ({ isDropped }) => {
         transition: "margin-left 0.3s ease-in-out",
         width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
         padding: 20,
-        border: "1px solid #ccc",
+        border: "3px solid #ccc",
         borderRadius: 10,
-        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+        // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
       }}
     >
       <ToastContainer position="top-right" autoClose={5000} />
@@ -226,9 +263,9 @@ const TrancheDetailsApproval = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ margin: "20px auto" }} />
       ) : lenders.length === 0 ? (
-        <p style={{ textAlign: "center", marginTop: 20 }}>No tranches available</p>
+        <p style={{ textAlign: "center", marginTop: 20 }}>No Pending Tranches available</p>
       ) : (
-        <Table dataSource={lenders} columns={columns} rowKey="tranche_id" pagination={false} />
+        <Table bordered dataSource={lenders} columns={columns} rowKey="tranche_id" pagination={false} />
       )}
       <div style={{ marginTop: 20, display: "flex", justifyContent: "center", marginRight: "20px" }}>
         <TextField

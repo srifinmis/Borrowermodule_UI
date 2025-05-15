@@ -181,9 +181,9 @@ const DocumentsUpload = ({ isDropped }) => {
         transition: "margin-left 0.3s ease-in-out",
         width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
         padding: 4,
-        border: "1px solid #ccc",
+        border: "3px solid #ccc",
         borderRadius: 2,
-        boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
+        // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)",
         backgroundColor: "#fff",
       }}
     >
@@ -206,7 +206,7 @@ const DocumentsUpload = ({ isDropped }) => {
 
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={6}>
-          <FormControl fullWidth size="small">
+          <FormControl required fullWidth size="small">
             <InputLabel>Lender Code / Name</InputLabel>
             <Select value={lender_code} onChange={(e) => handleLenderChange(e.target.value)}>
               {lenderCodes.map((id) => (
@@ -219,7 +219,7 @@ const DocumentsUpload = ({ isDropped }) => {
         </Grid>
 
         <Grid item xs={6}>
-          <FormControl fullWidth size="small">
+          <FormControl required fullWidth size="small">
             <InputLabel>Sanction ID</InputLabel>
             <Select value={sanctionId} onChange={(e) => handleSanctionChange(e.target.value)}>
               {filteredSanctionIds.map((item) => (
@@ -237,7 +237,7 @@ const DocumentsUpload = ({ isDropped }) => {
         </Grid>
 
         <Grid item xs={6}>
-          <FormControl fullWidth size="small">
+          <FormControl required fullWidth size="small">
             <InputLabel>Document Type</InputLabel>
             <Select value={documentType} onChange={(e) => setDocumentType(e.target.value)}>
               <MenuItem value="Sanction Letter">Sanction Letter</MenuItem>
@@ -249,6 +249,7 @@ const DocumentsUpload = ({ isDropped }) => {
 
         <Grid item xs={6}>
           <TextField
+            required
             label="File Name"
             fullWidth
             size="small"
@@ -259,6 +260,7 @@ const DocumentsUpload = ({ isDropped }) => {
 
         <Grid item xs={6}>
           <TextField
+            required
             label="Uploaded Date"
             type="date"
             fullWidth

@@ -46,11 +46,11 @@ const LenderMasterApproval = ({ isDropped }) => {
           );
           setLenders(sortedData);
         } else {
-          message.error("Failed to fetch lenders");
+          message.error("Failed to fetch sanction");
         }
       } catch (error) {
-        console.error("Error fetching lenders:", error);
-        message.error("Error fetching lenders");
+        console.error("Error fetching sanction:", error);
+        message.error("Error fetching sanction");
       } finally {
         setLoading(false);
       }
@@ -87,7 +87,7 @@ const LenderMasterApproval = ({ isDropped }) => {
 
   const handleApprove = async () => {
     if (selectedRows.length === 0) {
-      message.warning("No lenders selected.");
+      message.warning("No sanctions selected.");
       return;
     }
 
@@ -147,7 +147,7 @@ const LenderMasterApproval = ({ isDropped }) => {
         }
       }
     } catch (error) {
-      console.error("Error approving lenders:", error);
+      console.error("Error approving sanctions:", error);
       message.error(`Error: ${error.response?.data?.message || "Approval failed."}`);
     }
     setRemarks("");
@@ -160,7 +160,7 @@ const LenderMasterApproval = ({ isDropped }) => {
       return;
     }
     if (selectedRows.length === 0) {
-      message.warning("No lenders selected.");
+      message.warning("No sanctions selected.");
       return;
     }
 
@@ -180,7 +180,7 @@ const LenderMasterApproval = ({ isDropped }) => {
 
 
       if (response.status === 201) {
-        message.success("Lenders rejected successfully.");
+        message.success("Sanctions rejected successfully.");
 
         localStorage.setItem("submissionMessage", "Sanction's Rejected successfully!");
         localStorage.setItem("messageType", "success");
@@ -230,7 +230,7 @@ const LenderMasterApproval = ({ isDropped }) => {
 
       }
     } catch (error) {
-      console.error("Error rejecting lenders:", error);
+      console.error("Error rejecting sanctions:", error);
       message.error(`Error: ${error.response?.data?.message || "Rejection failed."}`);
     }
 
@@ -246,25 +246,58 @@ const LenderMasterApproval = ({ isDropped }) => {
 
   const columns = [
     {
-      title: <Checkbox onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
+      title: <Checkbox  style={{ transform: "scale(1.6)" }} onChange={handleSelectAll} checked={selectedRows.length === lenders.length} />,
       dataIndex: "sanction_id",
+      
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (_, lender) => (
         <Checkbox
+        style={{ transform: "scale(1.6)" }}
           checked={selectedRows.some((row) =>
             row.sanction_id === lender.sanction_id && row.id === lender.id
-            && row.lender_code === lender.lender_code && row.updatedat === lender.updatedat)}
+            && row.lender_code === lender.lender_code)}
           onChange={() => handleSelect(lender)}
         />
       ),
     },
-    { title: "Lender Code", dataIndex: "lender_code" },
-    { title: "Sanction ID", dataIndex: "sanction_id" },
-    { title: "Loan Type", dataIndex: "loan_type" },
-    { title: "Sanction Date", dataIndex: "sanction_date" },
-    { title: "Sanction Amount", dataIndex: "sanction_amount" },
+    {
+      title: "Lender Code", dataIndex: "lender_code",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction ID", dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Loan Type", dataIndex: "loan_type",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction Date", dataIndex: "sanction_date",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
+    {
+      title: "Sanction Amount", dataIndex: "sanction_amount",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
+    },
     {
       title: "Details",
       dataIndex: "sanction_id",
+      onHeaderCell: () => ({
+        style: { backgroundColor: "#a2b0cc", color: "black" }
+      }),
       render: (code, record) => <Button type="link" onClick={() => handleViewDetails(code, record.lender_code, record.approval_status, record.updatedat)}>View</Button>,
     },
   ];
@@ -281,9 +314,9 @@ const LenderMasterApproval = ({ isDropped }) => {
       transition: "margin-left 0.3s ease-in-out",
       width: isDropped ? "calc(100% - 180px)" : "calc(100% - 350px)",
       padding: 3,
-      border: "1px solid #ccc",
+      border: "3px solid #ccc",
       borderRadius: 10,
-      boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
+      // boxShadow: "inset 0 0 10px rgba(0, 0, 0, 0.3)"
     }}>
       <ToastContainer position="top-right" autoClose={5000} />
       <Typography
@@ -306,9 +339,9 @@ const LenderMasterApproval = ({ isDropped }) => {
       {loading ? (
         <Spin size="large" style={{ margin: "20px auto" }} />
       ) : lenders.length === 0 ? (
-        <p style={{ textAlign: "center", marginTop: 20 }}>No lenders available</p>
+        <p style={{ textAlign: "center", marginTop: 20 }}>No Pending Sanction's Available</p>
       ) : (
-        <Table dataSource={lenders} columns={columns} rowKey="lender_code" pagination={false} />
+        <Table bordered dataSource={lenders} columns={columns} rowKey="lender_code" pagination={false} />
       )}
 
       <div style={{ marginTop: 20, display: "flex", justifyContent: "center", marginRight: "20px" }}>
